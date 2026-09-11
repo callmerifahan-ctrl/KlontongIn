@@ -15,6 +15,7 @@ let items = [];
 let cart = [];
 let html5QrCode = null;
 let currentPaymentMethod = ""; // 'Tunai', 'QRIS', 'Bon'
+let selectedCategory = "";
 
 // ===================================
 // DOM ELEMENTS
@@ -86,7 +87,8 @@ async function loadDataSupabase() {
         name: item.nama_barang || item.nama,
         stock: item.stok,
         sellPrice: item.harga_jual,
-        code: item.barcode
+        code: item.barcode,
+        category: item.kategori || "Lainnya"
     }));
 }
 
@@ -171,7 +173,6 @@ function openPaymentModal() {
     const total = getCartTotal();
     modalTotalPay.textContent = formatRupiah(total);
 
-    // Reset Pilihan Form
     currentPaymentMethod = "";
     cashFormContainer.style.display = "none";
     qrisFormContainer.style.display = "none";
@@ -233,7 +234,6 @@ async function processCheckout() {
     let isDebt = false;
     let debtRemaining = 0;
 
-    // Validasi Sesuai Metode Pembayaran
     if (currentPaymentMethod === "Tunai") {
         paymentAmount = parseInt(modalPaymentInput.value, 10) || 0;
         if (paymentAmount < total) return alert("Uang pembayaran kurang!");
@@ -251,7 +251,6 @@ async function processCheckout() {
     btnConfirmPayment.disabled = true;
     btnConfirmPayment.textContent = "Memproses...";
 
-    // 1. Potong Stok di Database
     for (const cartItem of cart) {
         const item = getItemById(cartItem.id);
         const newStock = item.stock - cartItem.qty;
@@ -270,7 +269,6 @@ async function processCheckout() {
         }
     }
 
-    // 2. Simpan Transaksi
     const transactionCode = await generateTransactionCode();
     const newTransaction = {
         kode_transaksi: transactionCode,
@@ -308,18 +306,71 @@ async function processCheckout() {
 }
 
 // ===================================
-// RENDERERS & ELEMENTS
+// RENDERERS & CATEGORY FILTERS
 // ===================================
+function renderCategoryFilter() {
+    let filterContainer = document.getElementById("cashierCategoryFilter");
+    
+    if (!filterContainer && searchCashier) {
+        filterContainer = document.createElement("div");
+        filterContainer.id = "cashierCategoryFilter";
+        filterContainer.style.cssText = "display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none;";
+        searchCashier.parentNode.insertBefore(filterContainer, searchCashier.nextSibling);
+    }
+
+    if (!filterContainer) return;
+
+    const categories = [
+        { label: "Semua", value: "" },
+        { label: "🌾 Sembako", value: "Sembako" },
+        { label: "🍦 Es Krim", value: "Es Krim" },
+        { label: "🚬 Rokok", value: "Rokok" },
+        { label: "🥤 Minuman", value: "Minuman" },
+        { label: "🍞 Makanan", value: "Makanan" },
+        { label: "🧼 Kebutuhan", value: "Kebutuhan" },
+        { label: "📦 Lainnya", value: "Lainnya" }
+    ];
+
+    filterContainer.replaceChildren();
+
+    categories.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = cat.label;
+        btn.style.cssText = `
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 16px;
+            border: 1px solid #ccc;
+            white-space: nowrap;
+            cursor: pointer;
+            background: ${selectedCategory === cat.value ? "#D67A67" : "#fff"};
+            color: ${selectedCategory === cat.value ? "#fff" : "#333"};
+            font-weight: ${selectedCategory === cat.value ? "bold" : "normal"};
+        `;
+        
+        btn.addEventListener("click", () => {
+            selectedCategory = cat.value;
+            renderCategoryFilter();
+            renderCashierItems();
+        });
+
+        filterContainer.appendChild(btn);
+    });
+}
+
 function renderCashierItems() {
     cashierItems.replaceChildren();
     const keyword = searchCashier ? searchCashier.value.toLowerCase().trim() : "";
 
-    const filtered = items.filter(item => 
-        (item.name || "").toLowerCase().includes(keyword)
-    );
+    const filtered = items.filter(item => {
+        const matchesName = (item.name || "").toLowerCase().includes(keyword);
+        const matchesCategory = selectedCategory === "" || item.category === selectedCategory;
+        return matchesName && matchesCategory;
+    });
 
     if (filtered.length === 0) {
-        cashierItems.innerHTML = `<p style="text-align:center; color:#888;">Barang tidak ditemukan</p>`;
+        cashierItems.innerHTML = `<p style="text-align:center; color:#888; padding: 20px;">Barang tidak ditemukan</p>`;
         return;
     }
 
@@ -388,30 +439,36 @@ function createCartItem(item) {
 }
 
 // ===================================
-// BARCODE SCANNER
+// BARCODE SCANNER (KHUSUS GLICO & PABRIK)
 // ===================================
 function openScanner() {
     scannerModal.classList.add("show");
     html5QrCode = new Html5Qrcode("scannerReader");
     
-    const config = { fps: 10, qrbox: { width: 260, height: 130 } };
+    const config = { 
+        fps: 15, 
+        qrbox: { width: 280, height: 120 } 
+    };
 
     html5QrCode.start(
         { facingMode: "environment" },
         config,
         (decodedText) => {
-            const foundItem = items.find(item => item.code === decodedText);
+            const cleanCode = decodedText.trim();
+            const foundItem = items.find(item => item.code === cleanCode);
+            
             if (!foundItem) {
-                alert(`Barang dengan barcode "${decodedText}" tidak ditemukan!`);
+                alert(`⚠️ Barang dengan Barcode "${cleanCode}" belum terdaftar!`);
             } else {
                 addToCart(foundItem.id);
+                if (navigator.vibrate) navigator.vibrate(100);
             }
             closeScanner();
         },
         () => {}
     ).catch((err) => {
         console.error(err);
-        alert("Kamera tidak bisa diakses!");
+        alert("Kamera tidak dapat diakses!");
         closeScanner();
     });
 }
@@ -447,6 +504,7 @@ function setupEventListeners() {
 
 async function init() {
     await loadDataSupabase();
+    renderCategoryFilter();
     renderCashierItems();
     renderCart();
     setupEventListeners();
