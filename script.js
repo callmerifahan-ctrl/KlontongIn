@@ -19,6 +19,7 @@ const formTitle = document.getElementById("formTitle");
 const itemIdInput = document.getElementById("itemId");
 const itemImageUrlInput = document.getElementById("itemImageUrl");
 const namaBarangInput = document.getElementById("namaBarang");
+const barcodeInput = document.getElementById("barcodeInput");
 const stokBarangInput = document.getElementById("stokBarang");
 const hargaBeliInput = document.getElementById("hargaBeli");
 const hargaJualInput = document.getElementById("hargaJual");
@@ -59,13 +60,6 @@ function showToast(message) {
     } else {
         alert(message);
     }
-}
-
-function generateItemCode(item) {
-    if (item.barcode) return item.barcode;
-    const prefix = item.kategori ? item.kategori.substring(0, 3).toUpperCase() : "BRG";
-    const paddedId = String(item.id || Date.now()).slice(-4);
-    return `${prefix}-${paddedId}`;
 }
 
 // ===================================
@@ -171,7 +165,7 @@ function renderItems() {
     const selectedCat = filterCategory ? filterCategory.value : "";
 
     const filtered = items.filter(item => {
-        const matchesName = (item.nama_barang || "").toLowerCase().includes(keyword);
+        const matchesName = (item.nama_barang || "").toLowerCase().includes(keyword) || (item.barcode || "").toLowerCase().includes(keyword);
         const matchesCategory = selectedCat === "" || (item.kategori || "") === selectedCat;
         return matchesName && matchesCategory;
     });
@@ -210,13 +204,24 @@ function createItemCard(item) {
     title.textContent = item.nama_barang;
 
     const catBadge = document.createElement("small");
-    catBadge.style.background = "#f0f0f0";
+    catBadge.style.background = "#eef2f5";
     catBadge.style.padding = "2px 6px";
     catBadge.style.borderRadius = "4px";
     catBadge.style.color = "#555";
-    catBadge.textContent = item.kategori || "Tanpa Kategori";
+    catBadge.textContent = item.kategori ? `🏷️ ${item.kategori}` : "📦 Lainnya";
 
-    titleBox.append(title, catBadge);
+    if (item.barcode) {
+        const barcodeBadge = document.createElement("small");
+        barcodeBadge.style.background = "#fff3cd";
+        barcodeBadge.style.color = "#856404";
+        barcodeBadge.style.padding = "2px 6px";
+        barcodeBadge.style.borderRadius = "4px";
+        barcodeBadge.style.marginLeft = "4px";
+        barcodeBadge.textContent = `║▌ ${item.barcode}`;
+        titleBox.append(title, catBadge, barcodeBadge);
+    } else {
+        titleBox.append(title, catBadge);
+    }
 
     const price = document.createElement("div");
     price.style.textAlign = "right";
@@ -289,6 +294,7 @@ function populateForm(item) {
     itemIdInput.value = item.id;
     itemImageUrlInput.value = item.image_url || "";
     namaBarangInput.value = item.nama_barang;
+    if (barcodeInput) barcodeInput.value = item.barcode || "";
     stokBarangInput.value = item.stok;
     hargaBeliInput.value = item.harga_beli;
     hargaJualInput.value = item.harga_jual;
@@ -319,6 +325,7 @@ async function handleSubmit(e) {
 
     const id = itemIdInput.value;
     const nama_barang = namaBarangInput.value.trim();
+    const barcode = barcodeInput ? barcodeInput.value.trim() : "";
     const stok = parseInt(stokBarangInput.value, 10);
     const harga_beli = parseFloat(hargaBeliInput.value);
     const harga_jual = parseFloat(hargaJualInput.value);
@@ -332,7 +339,7 @@ async function handleSubmit(e) {
         if (uploadedUrl) image_url = uploadedUrl;
     }
 
-    const payload = { nama_barang, stok, harga_beli, harga_jual, image_url, kategori };
+    const payload = { nama_barang, barcode, stok, harga_beli, harga_jual, image_url, kategori };
 
     if (id) {
         const { error } = await supabaseClient.from("barang").update(payload).eq("id", id);

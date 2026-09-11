@@ -53,11 +53,11 @@
 
                 <div class="form-group">
                     <label for="namaBarang">Nama Barang / Produk:*</label>
-                    <input type="text" id="namaBarang" required placeholder="Contoh: Minyak Goreng 1L">
+                    <input type="text" id="namaBarang" required placeholder="Contoh: Es Krim Frost Bite Cookies">
                 </div>
 
                 <div class="form-group">
-                    <label for="kategoriBarang">Kategori Produk:*</label>
+                    <label for="kategoriBarang">Kategori Spesifik:*</label>
                     <select id="kategoriBarang" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box;" required>
                         <option value="">-- Pilih Kategori --</option>
                         <option value="Sembako">🌾 Sembako & Timbangan</option>
@@ -68,6 +68,11 @@
                         <option value="Kebutuhan">🧼 Sabun & Kebutuhan Rumah</option>
                         <option value="Lainnya">📦 Lain-lain</option>
                     </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="barcodeInput">Kode Barcode / Kode Batang (Opsional):</label>
+                    <input type="text" id="barcodeInput" placeholder="Scan/Ketik nomor barcode kemasan...">
                 </div>
 
                 <div class="form-group">
@@ -94,7 +99,7 @@
 
         <!-- Filter Search & Kategori -->
         <div class="sort-box" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
-            <input type="text" id="searchInput" placeholder="🔍 Cari nama barang..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
+            <input type="text" id="searchInput" placeholder="🔍 Cari nama barang / barcode..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
             
             <select id="filterCategory" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box;">
                 <option value="">📂 Semua Kategori</option>
@@ -146,6 +151,6 @@
     <div id="toast" class="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
-    <script src="script.js?v=5.0"></script>
+    <script src="script.js?v=6.0"></script>
 </body>
 </html>
