@@ -53,15 +53,20 @@ const btnConfirmPayment = document.getElementById("btnConfirmPayment");
 const btnClosePaymentModal = document.getElementById("btnClosePaymentModal");
 
 // ===================================
-// UTILITIES & PEMBULATAN
+// UTILITIES & HELPER KILOAN
 // ===================================
 function formatRupiah(angka) {
     return "Rp " + Number(angka || 0).toLocaleString("id-ID");
 }
 
-// Pembulatan pecahan desimal timbangan ke kelipatan Rp 100 terdekat
 function roundPrice(rawPrice) {
     return Math.round(rawPrice / 100) * 100;
+}
+
+// Cek apakah produk termasuk Telur / Beras
+function isKiloan(name) {
+    const lowerName = (name || "").toLowerCase();
+    return lowerName.includes("telur") || lowerName.includes("beras");
 }
 
 function getItemById(id) {
@@ -252,7 +257,6 @@ async function processCheckout() {
     btnConfirmPayment.disabled = true;
     btnConfirmPayment.textContent = "Memproses...";
 
-    // 1. Potong Stok Barang di Supabase
     for (const cartItem of cart) {
         const item = getItemById(cartItem.id);
         const newStock = parseFloat((item.stock - cartItem.qty).toFixed(3));
@@ -271,7 +275,6 @@ async function processCheckout() {
         }
     }
 
-    // 2. Simpan Transaksi Utama
     const transactionCode = await generateTransactionCode();
     const newTransaction = {
         kode_transaksi: transactionCode,
@@ -292,13 +295,12 @@ async function processCheckout() {
 
     if (transactionError) {
         console.error(transactionError);
-        alert("Gagal menyimpan transaksi! Pastikan SQL penambahan kolom utang sudah dijalankan di Supabase.");
+        alert("Gagal menyimpan transaksi!");
         btnConfirmPayment.disabled = false;
         btnConfirmPayment.textContent = "✅ Simpan Transaksi";
         return;
     }
 
-    // 3. Catat ke Tabel Riwayat Bon jika berupa Bon/Utang
     if (isDebt && debtRemaining > 0) {
         await supabaseClient
             .from("riwayat_bon")
@@ -407,11 +409,14 @@ function createCashierCard(item) {
     const title = document.createElement("h3");
     title.textContent = item.name;
 
+    const kiloan = isKiloan(item.name);
+    const unitText = kiloan ? " / kg" : "";
+
     const price = document.createElement("p");
-    price.textContent = `${formatRupiah(item.sellPrice)}`;
+    price.textContent = `${formatRupiah(item.sellPrice)}${unitText}`;
 
     const stock = document.createElement("small");
-    stock.textContent = `Stok : ${item.stock}`;
+    stock.textContent = `Stok : ${item.stock}${kiloan ? " kg" : ""}`;
 
     const addButton = document.createElement("button");
     addButton.textContent = "➕ Tambah";
@@ -451,20 +456,32 @@ function createCartItem(item) {
     const controls = document.createElement("div");
     controls.style.cssText = "display: flex; align-items: center; gap: 4px;";
 
+    const kiloan = isKiloan(item.name);
+
     const qtyInput = document.createElement("input");
     qtyInput.type = "number";
-    qtyInput.step = "0.01";
+    qtyInput.step = kiloan ? "0.01" : "1";
     qtyInput.min = "0";
     qtyInput.value = item.qty;
     qtyInput.style.cssText = "width: 65px; padding: 4px; text-align: center; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;";
     qtyInput.addEventListener("change", (e) => updateCartQtyDirect(item.id, e.target.value));
+
+    controls.append(qtyInput);
+
+    if (kiloan) {
+        const unitLabel = document.createElement("span");
+        unitLabel.style.fontSize = "12px";
+        unitLabel.style.color = "#666";
+        unitLabel.textContent = "kg";
+        controls.append(unitLabel);
+    }
 
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "❌";
     deleteBtn.style.cssText = "background: none; border: none; cursor: pointer; padding: 2px 4px;";
     deleteBtn.addEventListener("click", () => updateCartQtyDirect(item.id, 0));
 
-    controls.append(qtyInput, deleteBtn);
+    controls.append(deleteBtn);
     li.append(infoBox, controls);
 
     return li;

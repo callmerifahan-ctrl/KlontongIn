@@ -46,10 +46,15 @@ const addQtyInput = document.getElementById("addQtyInput");
 const btnSubmitAddStock = document.getElementById("btnSubmitAddStock");
 
 // ===================================
-// UTILITIES
+// UTILITIES & HELPER KILOAN
 // ===================================
 function formatRupiah(angka) {
     return "Rp " + Number(angka || 0).toLocaleString("id-ID");
+}
+
+function isKiloan(name) {
+    const lowerName = (name || "").toLowerCase();
+    return lowerName.includes("telur") || lowerName.includes("beras");
 }
 
 function showToast(message) {
@@ -238,7 +243,6 @@ function createItemCard(item) {
 
     header.append(titleBox, price);
 
-    // Controls Stok [+] & [-]
     const stockRow = document.createElement("div");
     stockRow.style.display = "flex";
     stockRow.style.justifyContent = "space-between";
@@ -251,14 +255,16 @@ function createItemCard(item) {
     stockText.style.fontSize = "14px";
     stockText.style.fontWeight = "bold";
 
+    const unitSuffix = isKiloan(item.nama_barang) ? " kg" : "";
+
     if (item.stok === 0) {
         stockText.style.color = "#e74c3c";
         stockText.textContent = "Stok: HABIS ❌";
     } else if (isLowStock) {
         stockText.style.color = "#e67e22";
-        stockText.textContent = `Stok: ${item.stok} ⚠️ (Menipis)`;
+        stockText.textContent = `Stok: ${item.stok}${unitSuffix} ⚠️ (Menipis)`;
     } else {
-        stockText.textContent = `Stok: ${item.stok}`;
+        stockText.textContent = `Stok: ${item.stok}${unitSuffix}`;
     }
 
     const quickBox = document.createElement("div");
@@ -381,7 +387,7 @@ async function deleteItem(id, name) {
     await loadItems();
 }
 
-// WA Sender untuk Stok Habis / Menipis (Stok <= 3)
+// WA Sender untuk Stok Habis / Menipis
 if (btnWaStok) {
     btnWaStok.addEventListener("click", () => {
         const lowStockItems = items.filter(item => (item.stok || 0) <= 3);
@@ -394,7 +400,8 @@ if (btnWaStok) {
         message += "-----------------------------------------\n";
 
         lowStockItems.forEach((item, index) => {
-            const status = item.stok === 0 ? "❌ (HABIS)" : `⚠️ (Sisa: ${item.stok})`;
+            const unit = isKiloan(item.nama_barang) ? "kg" : "";
+            const status = item.stok === 0 ? "❌ (HABIS)" : `⚠️ (Sisa: ${item.stok} ${unit})`;
             message += `${index + 1}. *${item.nama_barang}* ${status}\n`;
         });
 
