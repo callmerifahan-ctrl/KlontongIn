@@ -53,10 +53,15 @@ const btnConfirmPayment = document.getElementById("btnConfirmPayment");
 const btnClosePaymentModal = document.getElementById("btnClosePaymentModal");
 
 // ===================================
-// UTILITIES
+// UTILITIES & PEMBULATAN
 // ===================================
 function formatRupiah(angka) {
     return "Rp " + Number(angka || 0).toLocaleString("id-ID");
+}
+
+// Fungsi pembulatan pecahan desimal timbangan ke kelipatan Rp 100 terdekat
+function roundPrice(rawPrice) {
+    return Math.round(rawPrice / 100) * 100;
 }
 
 function getItemById(id) {
@@ -64,7 +69,7 @@ function getItemById(id) {
 }
 
 function getCartTotal() {
-    return cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    return cart.reduce((sum, item) => sum + roundPrice(item.price * item.qty), 0);
 }
 
 // ===================================
@@ -85,8 +90,8 @@ async function loadDataSupabase() {
     items = (data || []).map(item => ({
         id: item.id,
         name: item.nama_barang || item.nama,
-        stock: item.stok,
-        sellPrice: item.harga_jual,
+        stock: parseFloat(item.stok) || 0,
+        sellPrice: parseFloat(item.harga_jual) || 0,
         code: item.barcode,
         category: item.kategori || "Lainnya"
     }));
@@ -106,7 +111,7 @@ async function generateTransactionCode() {
 }
 
 // ===================================
-// CART OPERATIONS
+// CART OPERATIONS (SUPPORT DESIMAL TIMBANGAN)
 // ===================================
 function addToCart(itemId) {
     const inventoryItem = getItemById(itemId);
@@ -118,7 +123,7 @@ function addToCart(itemId) {
         if (existingItem.qty >= inventoryItem.stock) {
             return alert("Stok tidak mencukupi!");
         }
-        existingItem.qty++;
+        existingItem.qty = parseFloat((existingItem.qty + 1).toFixed(3));
     } else {
         if (inventoryItem.stock <= 0) {
             return alert("Barang habis!");
@@ -134,28 +139,24 @@ function addToCart(itemId) {
     renderCart();
 }
 
-function increaseCartQty(itemId) {
+function updateCartQtyDirect(itemId, newQty) {
     const cartItem = cart.find(item => item.id === itemId);
     const inventoryItem = getItemById(itemId);
 
     if (!cartItem || !inventoryItem) return;
 
-    if (cartItem.qty >= inventoryItem.stock) {
-        return alert("Stok tidak mencukupi!");
+    const parsedQty = parseFloat(newQty);
+    if (isNaN(parsedQty) || parsedQty <= 0) {
+        cart = cart.filter(item => item.id !== itemId);
+    } else {
+        if (parsedQty > inventoryItem.stock) {
+            alert("Stok tidak mencukupi!");
+            cartItem.qty = inventoryItem.stock;
+        } else {
+            cartItem.qty = parsedQty;
+        }
     }
 
-    cartItem.qty++;
-    renderCart();
-}
-
-function decreaseCartQty(itemId) {
-    const index = cart.findIndex(item => item.id === itemId);
-    if (index === -1) return;
-
-    cart[index].qty--;
-    if (cart[index].qty <= 0) {
-        cart.splice(index, 1);
-    }
     renderCart();
 }
 
@@ -253,7 +254,7 @@ async function processCheckout() {
 
     for (const cartItem of cart) {
         const item = getItemById(cartItem.id);
-        const newStock = item.stock - cartItem.qty;
+        const newStock = parseFloat((item.stock - cartItem.qty).toFixed(3));
 
         const { error: stockError } = await supabaseClient
             .from("barang")
@@ -389,10 +390,10 @@ function createCashierCard(item) {
     title.textContent = item.name;
 
     const price = document.createElement("p");
-    price.textContent = formatRupiah(item.sellPrice);
+    price.textContent = `${formatRupiah(item.sellPrice)} / kg`;
 
     const stock = document.createElement("small");
-    stock.textContent = `Stok : ${item.stock}`;
+    stock.textContent = `Stok : ${item.stock} kg`;
 
     const addButton = document.createElement("button");
     addButton.textContent = "➕ Tambah";
@@ -412,45 +413,58 @@ function renderCart() {
 
 function createCartItem(item) {
     const li = document.createElement("li");
+    li.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #eee;";
+
+    const infoBox = document.createElement("div");
+    infoBox.style.flex = "1";
 
     const title = document.createElement("strong");
+    title.style.display = "block";
     title.textContent = item.name;
 
-    const subtotal = document.createElement("p");
-    subtotal.textContent = formatRupiah(item.price * item.qty);
+    const calculatedPrice = roundPrice(item.price * item.qty);
+    const subtotal = document.createElement("small");
+    subtotal.style.color = "#D67A67";
+    subtotal.style.fontWeight = "bold";
+    subtotal.textContent = formatRupiah(calculatedPrice);
+
+    infoBox.append(title, subtotal);
 
     const controls = document.createElement("div");
-    controls.className = "stock-controls";
+    controls.style.cssText = "display: flex; align-items: center; gap: 4px;";
 
-    const minusBtn = document.createElement("button");
-    minusBtn.textContent = "➖";
-    minusBtn.addEventListener("click", () => decreaseCartQty(item.id));
+    const qtyInput = document.createElement("input");
+    qtyInput.type = "number";
+    qtyInput.step = "0.01";
+    qtyInput.min = "0";
+    qtyInput.value = item.qty;
+    qtyInput.style.cssText = "width: 65px; padding: 4px; text-align: center; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;";
+    qtyInput.addEventListener("change", (e) => updateCartQtyDirect(item.id, e.target.value));
 
-    const qty = document.createElement("strong");
-    qty.className = "stock-text";
-    qty.textContent = item.qty;
+    const unitText = document.createElement("span");
+    unitText.style.fontSize = "12px";
+    unitText.style.color = "#666";
+    unitText.textContent = "kg";
 
-    const plusBtn = document.createElement("button");
-    plusBtn.textContent = "➕";
-    plusBtn.addEventListener("click", () => increaseCartQty(item.id));
+    const deleteBtn = document.createElement("button");
+    deleteBtn.textContent = "❌";
+    deleteBtn.style.cssText = "background: none; border: none; cursor: pointer; padding: 2px 4px;";
+    deleteBtn.addEventListener("click", () => updateCartQtyDirect(item.id, 0));
 
-    controls.append(minusBtn, qty, plusBtn);
-    li.append(title, subtotal, controls);
+    controls.append(qtyInput, unitText, deleteBtn);
+    li.append(infoBox, controls);
 
     return li;
 }
 
 // ===================================
-// BARCODE SCANNER (KHUSUS GLICO & PABRIK)
+// BARCODE SCANNER
 // ===================================
 function openScanner() {
     scannerModal.classList.add("show");
     html5QrCode = new Html5Qrcode("scannerReader");
     
-    const config = { 
-        fps: 15, 
-        qrbox: { width: 280, height: 120 } 
-    };
+    const config = { fps: 15, qrbox: { width: 280, height: 120 } };
 
     html5QrCode.start(
         { facingMode: "environment" },
