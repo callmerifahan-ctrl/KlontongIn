@@ -56,16 +56,20 @@
                     <input type="text" id="namaBarang" required placeholder="Contoh: Es Krim Frost Bite Cookies">
                 </div>
 
+                <!-- Kategori di Form Input (index.html) -->
                 <div class="form-group">
-                    <label for="kategoriBarang">Kategori Spesifik:*</label>
+                    <label for="kategoriBarang">Kategori Produk:*</label>
                     <select id="kategoriBarang" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box;" required>
                         <option value="">-- Pilih Kategori --</option>
-                        <option value="Sembako">🌾 Sembako & Timbangan</option>
-                        <option value="Es Krim">🍦 Pendingin & Es Krim Glico</option>
-                        <option value="Rokok">🚬 Rokok & Eceran</option>
+                        <option value="Sembako">🌾 Sembako & Bahan Pokok</option>
+                        <option value="Mie Instan">🍜 Mie Instan & Olahan</option>
                         <option value="Minuman">🥤 Minuman & Galon</option>
-                        <option value="Makanan">🍞 Makanan / Snack</option>
-                        <option value="Kebutuhan">🧼 Sabun & Kebutuhan Rumah</option>
+                        <option value="Snack">🍿 Jajanan & Snack</option>
+                        <option value="Rokok">🚬 Rokok & Tembakau</option>
+                        <option value="Perlengkapan">🧼 Mandi & Cuci</option>
+                        <option value="Pendingin">🍦 Es Krim & Pendingin</option>
+                        <option value="Obat">💊 Obat & Kesehatan</option>
+                        <option value="Rumah Tangga">🔥 Gas & Kebutuhan Rumah</option>
                         <option value="Lainnya">📦 Lain-lain</option>
                     </select>
                 </div>
@@ -101,14 +105,18 @@
         <div class="sort-box" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
             <input type="text" id="searchInput" placeholder="🔍 Cari nama barang / barcode..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
             
+            <!-- Kategori di Filter Daftar Stok (index.html) -->
             <select id="filterCategory" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box;">
                 <option value="">📂 Semua Kategori</option>
-                <option value="Sembako">🌾 Sembako & Timbangan</option>
-                <option value="Es Krim">🍦 Pendingin & Es Krim Glico</option>
-                <option value="Rokok">🚬 Rokok & Eceran</option>
+                <option value="Sembako">🌾 Sembako & Bahan Pokok</option>
+                <option value="Mie Instan">🍜 Mie Instan & Olahan</option>
                 <option value="Minuman">🥤 Minuman & Galon</option>
-                <option value="Makanan">🍞 Makanan / Snack</option>
-                <option value="Kebutuhan">🧼 Sabun & Kebutuhan Rumah</option>
+                <option value="Snack">🍿 Jajanan & Snack</option>
+                <option value="Rokok">🚬 Rokok & Tembakau</option>
+                <option value="Perlengkapan">🧼 Mandi & Cuci</option>
+                <option value="Pendingin">🍦 Es Krim & Pendingin</option>
+                <option value="Obat">💊 Obat & Kesehatan</option>
+                <option value="Rumah Tangga">🔥 Gas & Kebutuhan Rumah</option>
                 <option value="Lainnya">📦 Lain-lain</option>
             </select>
         </div>

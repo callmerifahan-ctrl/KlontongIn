@@ -323,12 +323,14 @@ function renderCategoryFilter() {
     const categories = [
         { label: "Semua", value: "" },
         { label: "🌾 Sembako", value: "Sembako" },
-        { label: "🍦 Es Krim", value: "Es Krim" },
-        { label: "🚬 Rokok", value: "Rokok" },
+        { label: "🍜 Mie", value: "Mie Instan" },
         { label: "🥤 Minuman", value: "Minuman" },
-        { label: "🍞 Makanan", value: "Makanan" },
-        { label: "🧼 Kebutuhan", value: "Kebutuhan" },
-        { label: "📦 Lainnya", value: "Lainnya" }
+        { label: "🍿 Snack", value: "Snack" },
+        { label: "🚬 Rokok", value: "Rokok" },
+        { label: "🧼 Cuci/Mandi", value: "Perlengkapan" },
+        { label: "🍦 Es Krim", value: "Pendingin" },
+        { label: "💊 Obat", value: "Obat" },
+        { label: "🔥 Gas/Rumah", value: "Rumah Tangga" }
     ];
 
     filterContainer.replaceChildren();
