@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>KlontongIn - Buku Bon & Utang</title>
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="image/logo-warungku.png">
+    
+    <!-- Meta PWA & iOS -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#D67A67">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="KlontongIn">
+    <link rel="apple-touch-icon" href="image/logo-warungku.png">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Logo -->
+        <div class="header-logo" style="text-align: center; margin-bottom: 20px;">
+            <img src="image/logo-warungku.png" alt="KlontongIn Logo" class="brand-logo">
+            <h1>KlontongIn - Buku Bon</h1>
+        </div>
+
+        <nav class="main-nav">
+            <a href="index.html" class="nav-link">📦 Inventori</a>
+            <a href="cashier.html" class="nav-link">🛒 Kasir</a>
+            <a href="debts.html" class="nav-link active">📝 Bon / Utang</a>
+            <a href="history.html" class="nav-link">📋 Riwayat Transaksi</a>
+            <a href="report.html" class="nav-link">📊 Laporan</a>
+        </nav>
+
+        <!-- Ringkasan Total Utang -->
+        <div class="card" style="background: #fff3cd; border: 1px solid #ffeeba; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #856404; font-size: 14px;">Total Piutang / Bon Belum Lunas</h3>
+            <h1 id="totalDebtAmount" style="margin: 5px 0 0 0; color: #721c24; font-size: 28px;">Rp 0</h1>
+        </div>
+
+        <!-- Filter & Search -->
+        <div class="sort-box" style="margin-bottom: 15px;">
+            <input type="text" id="searchDebt" placeholder="🔍 Cari nama pelanggan / tetangga..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
+        </div>
+
+        <!-- Daftar Bon -->
+        <div class="list-box">
+            <h2>📝 Catatan Utang Tetangga</h2>
+            <div id="debtList"></div>
+        </div>
+    </div>
+
+    <!-- Modal Cicil / Pelunasan -->
+    <div id="payModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+        <div style="background: white; padding: 20px; border-radius: 12px; max-width: 380px; width: 90%; text-align: center;">
+            <h3 style="margin-top: 0;">Bayar / Cicil Bon</h3>
+            <p id="modalCustomerInfo" style="font-weight: bold; color: #333; margin-bottom: 5px;"></p>
+            <p id="modalRemainingInfo" style="color: #721c24; font-size: 18px; font-weight: bold; margin-top: 0;"></p>
+
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label for="payAmountInput" style="font-weight: bold; font-size: 13px;">Jumlah Uang Diterima (Rp):</label>
+                <input id="payAmountInput" type="number" placeholder="Masukkan nominal..." style="width: 100%; padding: 8px; margin-top: 4px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button id="btnConfirmPayDebt" class="btn btn-success" style="flex: 1;">✅ Simpan</button>
+                <button id="btnClosePayModal" class="btn btn-secondary" style="flex: 1;">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+    <script src="debts.js?v=1.0"></script>
+</body>
+</html>
