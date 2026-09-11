@@ -27,19 +27,30 @@
         <nav class="main-nav">
             <a href="index.html" class="nav-link">📦 Inventori</a>
             <a href="cashier.html" class="nav-link active">🛒 Kasir</a>
+            <a href="debts.html" class="nav-link">📝 Bon / Utang</a>
             <a href="history.html" class="nav-link">📋 Riwayat Transaksi</a>
             <a href="report.html" class="nav-link">📊 Laporan</a>
         </nav>
 
         <div class="cashier-layout">
+            <!-- Sisi Kiri: Daftar Barang & Search Bar -->
             <div class="cashier-box">
-                <h2>Daftar Barang</h2>
-                <button type="button" id="btnScanCashier" class="btn btn-primary">
-                    📷 Scan Barang
-                </button>
+                <div style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center;">
+                    <h2 style="margin: 0; flex: 1;">Daftar Barang</h2>
+                    <button type="button" id="btnScanCashier" class="btn btn-primary" style="padding: 8px 12px;">
+                        📷 Scan Barcode
+                    </button>
+                </div>
+
+                <!-- Input Pencarian Cepat -->
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="searchCashier" placeholder="🔍 Cari barang (contoh: kopi, mi, sabun)..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box;">
+                </div>
+
                 <div id="cashierItems"></div>
             </div>
 
+            <!-- Sisi Kanan: Keranjang Belanja -->
             <div class="cart-box">
                 <h2>Keranjang</h2>
                 <div id="cartItems"></div>
@@ -51,19 +62,63 @@
                     <h3 id="cartTotal" class="total-amount">Rp 0</h3>
                 </div>
 
-                <div class="payment-group">
-                    <label for="paymentInput"><strong>Pembayaran</strong></label>
-                    <input id="paymentInput" type="number" placeholder="Masukkan uang pelanggan">
-                </div>
-
-                <div class="change-group">
-                    <label><strong>Kembalian</strong></label>
-                    <h3 id="changeTotal">Rp 0</h3>
-                </div>
-
-                <button id="checkoutButton" class="btn btn-success">
-                    💳 Bayar
+                <button id="checkoutButton" class="btn btn-success" style="width: 100%; font-size: 18px; padding: 12px; margin-top: 15px; font-weight: bold;">
+                    💳 Proses Pembayaran
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Pilihan Pembayaran Fleksibel (Cash, QRIS, Bon) -->
+    <div id="paymentModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+        <div style="background: white; padding: 20px; border-radius: 12px; max-width: 420px; width: 90%; text-align: center;">
+            <h3 style="margin-top: 0;">Pilih Metode Pembayaran</h3>
+            <p style="color: #666; margin-bottom: 2px;">Total Belanja:</p>
+            <h1 id="modalTotalPay" style="color: #D67A67; margin: 0 0 15px 0; font-size: 30px; font-weight: bold;">Rp 0</h1>
+
+            <!-- Pilihan Tombol Pembayaran -->
+            <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                <button id="btnPayCash" class="btn btn-primary" style="flex: 1; padding: 10px; font-size: 13px;">💵 Tunai</button>
+                <button id="btnPayQRIS" class="btn" style="flex: 1; padding: 10px; font-size: 13px; background: #ee4d2d; color: white;">📱 QRIS Shopee</button>
+                <button id="btnPayDebt" class="btn" style="flex: 1; padding: 10px; font-size: 13px; background: #e67e22; color: white;">📝 Bon / Utang</button>
+            </div>
+
+            <!-- Container Form Tunai -->
+            <div id="cashFormContainer" style="display: none; text-align: left; background: #f9f9f9; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                <label for="modalPaymentInput" style="font-weight: bold; font-size: 13px;">Uang Diterima (Rp):</label>
+                <input id="modalPaymentInput" type="number" placeholder="Masukkan uang pembeli..." style="width: 100%; padding: 8px; margin-top: 4px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
+                <div style="display: flex; justify-content: space-between; margin-top: 10px; font-weight: bold;">
+                    <span>Kembalian:</span>
+                    <span id="modalChangeTotal" style="color: #27ae60;">Rp 0</span>
+                </div>
+            </div>
+
+            <!-- Container QRIS Shopee -->
+            <div id="qrisFormContainer" style="display: none; border-top: 1px solid #ddd; padding-top: 10px; margin-bottom: 15px;">
+                <p style="font-size: 12px; color: #555; margin-bottom: 8px;">Arahkan HP pembeli ke QRIS di bawah ini:</p>
+                <img id="qrisImage" src="image/qris-shopee.png" alt="QRIS Shopee" style="max-width: 100%; height: auto; border-radius: 8px; border: 1px solid #ccc;">
+                <p style="font-weight: bold; color: #d32f2f; margin-top: 6px; font-size: 13px;">Tunjukkan bukti transfer / Lunas ke kasir!</p>
+            </div>
+
+            <!-- Container Form Bon / Utang / DP -->
+            <div id="debtFormContainer" style="display: none; text-align: left; background: #fff3cd; padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ffeeba;">
+                <div style="margin-bottom: 10px;">
+                    <label for="debtCustomerName" style="font-weight: bold; font-size: 13px; color: #856404;">Nama Pelanggan / Tetangga:*</label>
+                    <input id="debtCustomerName" type="text" placeholder="Contoh: Bu RT / Pak Budi" style="width: 100%; padding: 8px; margin-top: 4px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
+                </div>
+                <div>
+                    <label for="debtDPInput" style="font-weight: bold; font-size: 13px; color: #856404;">Uang DP / Bayar Sebagian (Jika Ada):</label>
+                    <input id="debtDPInput" type="number" placeholder="0 jika belum bayar sama sekali" style="width: 100%; padding: 8px; margin-top: 4px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
+                </div>
+                <div style="margin-top: 8px; font-size: 13px; font-weight: bold; color: #721c24;">
+                    Sisa Utang: <span id="debtRemainingTotal">Rp 0</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons Modal -->
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="btnConfirmPayment" class="btn btn-success" style="flex: 1; padding: 10px; display: none;">✅ Simpan Transaksi</button>
+                <button id="btnClosePaymentModal" class="btn btn-secondary" style="flex: 1; padding: 10px;">Batal</button>
             </div>
         </div>
     </div>
@@ -73,7 +128,7 @@
         <div class="scanner-box">
             <h3>📷 Arahkan kamera ke barcode</h3>
             <div id="scannerReader"></div>
-            <button type="button" id="btnCloseScanner" class="btn btn-secondary">
+            <button type="button" id="btnCloseScanner" class="btn btn-secondary" style="margin-top: 10px; width: 100%;">
                 Batal
             </button>
         </div>
@@ -81,6 +136,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
-    <script src="cashier.js?v=2.0"></script>
+    <script src="cashier.js?v=3.0"></script>
 </body>
 </html>

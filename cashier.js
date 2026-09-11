@@ -5,11 +5,7 @@ const SUPABASE_URL = "https://dyyzsuleugpgiqutebwv.supabase.co";
 const SUPABASE_KEY = "sb_publishable_hKWVFsDZC539-T3nVyS13g_ME3HC0AP";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false
-    }
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
 });
 
 // ===================================
@@ -18,6 +14,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, 
 let items = [];
 let cart = [];
 let html5QrCode = null;
+let currentPaymentMethod = ""; // 'Tunai', 'QRIS', 'Bon'
 
 // ===================================
 // DOM ELEMENTS
@@ -25,13 +22,34 @@ let html5QrCode = null;
 const cashierItems = document.getElementById("cashierItems");
 const cartItems = document.getElementById("cartItems");
 const cartTotal = document.getElementById("cartTotal");
-const paymentInput = document.getElementById("paymentInput");
-const changeTotal = document.getElementById("changeTotal");
 const checkoutButton = document.getElementById("checkoutButton");
+const searchCashier = document.getElementById("searchCashier");
 
+// Barcode Scanner Elements
 const btnScanCashier = document.getElementById("btnScanCashier");
 const btnCloseScanner = document.getElementById("btnCloseScanner");
 const scannerModal = document.getElementById("scannerModal");
+
+// Payment Modal Elements
+const paymentModal = document.getElementById("paymentModal");
+const modalTotalPay = document.getElementById("modalTotalPay");
+const btnPayCash = document.getElementById("btnPayCash");
+const btnPayQRIS = document.getElementById("btnPayQRIS");
+const btnPayDebt = document.getElementById("btnPayDebt");
+
+const cashFormContainer = document.getElementById("cashFormContainer");
+const modalPaymentInput = document.getElementById("modalPaymentInput");
+const modalChangeTotal = document.getElementById("modalChangeTotal");
+
+const qrisFormContainer = document.getElementById("qrisFormContainer");
+
+const debtFormContainer = document.getElementById("debtFormContainer");
+const debtCustomerName = document.getElementById("debtCustomerName");
+const debtDPInput = document.getElementById("debtDPInput");
+const debtRemainingTotal = document.getElementById("debtRemainingTotal");
+
+const btnConfirmPayment = document.getElementById("btnConfirmPayment");
+const btnClosePaymentModal = document.getElementById("btnClosePaymentModal");
 
 // ===================================
 // UTILITIES
@@ -55,7 +73,7 @@ async function loadDataSupabase() {
     const { data, error } = await supabaseClient
         .from("barang")
         .select("*")
-        .order("id");
+        .order("nama_barang", { ascending: true });
 
     if (error) {
         console.error(error);
@@ -145,44 +163,95 @@ function clearCart() {
 }
 
 // ===================================
-// CHECKOUT & PAYMENT
+// MODAL PAYMENT HANDLERS
 // ===================================
-function updatePayment() {
-    const payment = parseInt(paymentInput.value, 10) || 0;
-    const total = getCartTotal();
-    const change = payment - total;
-
-    if (change < 0) {
-        changeTotal.textContent = "Uang Kurang";
-    } else {
-        changeTotal.textContent = formatRupiah(change);
-    }
-}
-
-async function checkout() {
+function openPaymentModal() {
     if (cart.length === 0) return alert("Keranjang masih kosong!");
 
     const total = getCartTotal();
-    const payment = parseInt(paymentInput.value, 10);
+    modalTotalPay.textContent = formatRupiah(total);
 
-    if (isNaN(payment)) return alert("Masukkan jumlah pembayaran!");
-    if (payment < total) return alert("Uang pembayaran kurang!");
+    // Reset Pilihan Form
+    currentPaymentMethod = "";
+    cashFormContainer.style.display = "none";
+    qrisFormContainer.style.display = "none";
+    debtFormContainer.style.display = "none";
+    btnConfirmPayment.style.display = "none";
 
+    modalPaymentInput.value = "";
+    debtCustomerName.value = "";
+    debtDPInput.value = "";
+
+    paymentModal.style.display = "flex";
+}
+
+function selectPaymentMethod(method) {
+    currentPaymentMethod = method;
+    btnConfirmPayment.style.display = "block";
+
+    cashFormContainer.style.display = method === "Tunai" ? "block" : "none";
+    qrisFormContainer.style.display = method === "QRIS" ? "block" : "none";
+    debtFormContainer.style.display = method === "Bon" ? "block" : "none";
+
+    if (method === "Tunai") updateCashChange();
+    if (method === "Bon") updateDebtRemaining();
+}
+
+function updateCashChange() {
+    const total = getCartTotal();
+    const payment = parseInt(modalPaymentInput.value, 10) || 0;
     const change = payment - total;
 
-    checkoutButton.disabled = true;
-    checkoutButton.textContent = "Memproses...";
+    if (change < 0) {
+        modalChangeTotal.textContent = "Uang Kurang";
+        modalChangeTotal.style.color = "#d32f2f";
+    } else {
+        modalChangeTotal.textContent = formatRupiah(change);
+        modalChangeTotal.style.color = "#27ae60";
+    }
+}
 
-    for (const cartItem of cart) {
-        const item = getItemById(cartItem.id);
-        if (!item || item.stock < cartItem.qty) {
-            alert(`Stok produk "${cartItem.name}" tidak mencukupi!`);
-            checkoutButton.disabled = false;
-            checkoutButton.textContent = "💳 Bayar";
-            return;
-        }
+function updateDebtRemaining() {
+    const total = getCartTotal();
+    const dp = parseInt(debtDPInput.value, 10) || 0;
+    const remaining = total - dp;
+
+    debtRemainingTotal.textContent = formatRupiah(Math.max(0, remaining));
+}
+
+// ===================================
+// CHECKOUT EXECUTION
+// ===================================
+async function processCheckout() {
+    if (cart.length === 0) return alert("Keranjang masih kosong!");
+    if (!currentPaymentMethod) return alert("Pilih metode pembayaran terlebih dahulu!");
+
+    const total = getCartTotal();
+    let paymentAmount = total;
+    let changeAmount = 0;
+    let customerName = "";
+    let isDebt = false;
+    let debtRemaining = 0;
+
+    // Validasi Sesuai Metode Pembayaran
+    if (currentPaymentMethod === "Tunai") {
+        paymentAmount = parseInt(modalPaymentInput.value, 10) || 0;
+        if (paymentAmount < total) return alert("Uang pembayaran kurang!");
+        changeAmount = paymentAmount - total;
+    } else if (currentPaymentMethod === "Bon") {
+        customerName = debtCustomerName.value.trim();
+        if (!customerName) return alert("Masukkan nama pelanggan / tetangga yang berutang!");
+
+        const dp = parseInt(debtDPInput.value, 10) || 0;
+        paymentAmount = dp;
+        debtRemaining = total - dp;
+        isDebt = true;
     }
 
+    btnConfirmPayment.disabled = true;
+    btnConfirmPayment.textContent = "Memproses...";
+
+    // 1. Potong Stok di Database
     for (const cartItem of cart) {
         const item = getItemById(cartItem.id);
         const newStock = item.stock - cartItem.qty;
@@ -195,19 +264,24 @@ async function checkout() {
         if (stockError) {
             console.error(stockError);
             alert("Gagal mengurangi stok barang: " + item.name);
-            checkoutButton.disabled = false;
-            checkoutButton.textContent = "💳 Bayar";
+            btnConfirmPayment.disabled = false;
+            btnConfirmPayment.textContent = "✅ Simpan Transaksi";
             return;
         }
     }
 
+    // 2. Simpan Transaksi
     const transactionCode = await generateTransactionCode();
     const newTransaction = {
         kode_transaksi: transactionCode,
         item: cart,
-        total,
-        bayar: payment,
-        kembalian: change,
+        total: total,
+        bayar: paymentAmount,
+        kembalian: changeAmount,
+        metode_pembayaran: currentPaymentMethod,
+        nama_pelanggan: customerName,
+        status_bon: isDebt,
+        sisa_utang: debtRemaining,
         tanggal: new Date().toISOString()
     };
 
@@ -215,8 +289,8 @@ async function checkout() {
         .from("transaksi")
         .insert([newTransaction]);
 
-    checkoutButton.disabled = false;
-    checkoutButton.textContent = "💳 Bayar";
+    btnConfirmPayment.disabled = false;
+    btnConfirmPayment.textContent = "✅ Simpan Transaksi";
 
     if (transactionError) {
         console.error(transactionError);
@@ -224,14 +298,13 @@ async function checkout() {
         return;
     }
 
-    paymentInput.value = "";
-    changeTotal.textContent = formatRupiah(0);
+    paymentModal.style.display = "none";
     clearCart();
 
     await loadDataSupabase();
     renderCashierItems();
 
-    window.location.href = `receipt.html?id=${transactionCode}`;
+    alert(`✅ Transaksi ${transactionCode} Berhasil Disimpan!`);
 }
 
 // ===================================
@@ -239,7 +312,18 @@ async function checkout() {
 // ===================================
 function renderCashierItems() {
     cashierItems.replaceChildren();
-    items.forEach((item) => {
+    const keyword = searchCashier ? searchCashier.value.toLowerCase().trim() : "";
+
+    const filtered = items.filter(item => 
+        (item.name || "").toLowerCase().includes(keyword)
+    );
+
+    if (filtered.length === 0) {
+        cashierItems.innerHTML = `<p style="text-align:center; color:#888;">Barang tidak ditemukan</p>`;
+        return;
+    }
+
+    filtered.forEach((item) => {
         cashierItems.appendChild(createCashierCard(item));
     });
 }
@@ -310,10 +394,7 @@ function openScanner() {
     scannerModal.classList.add("show");
     html5QrCode = new Html5Qrcode("scannerReader");
     
-    const config = { 
-        fps: 10, 
-        qrbox: { width: 260, height: 130 } 
-    };
+    const config = { fps: 10, qrbox: { width: 260, height: 130 } };
 
     html5QrCode.start(
         { facingMode: "environment" },
@@ -347,8 +428,19 @@ function closeScanner() {
 // INITIALIZATION
 // ===================================
 function setupEventListeners() {
-    checkoutButton.addEventListener("click", checkout);
-    if (paymentInput) paymentInput.addEventListener("input", updatePayment);
+    if (checkoutButton) checkoutButton.addEventListener("click", openPaymentModal);
+    if (searchCashier) searchCashier.addEventListener("input", renderCashierItems);
+
+    if (btnPayCash) btnPayCash.addEventListener("click", () => selectPaymentMethod("Tunai"));
+    if (btnPayQRIS) btnPayQRIS.addEventListener("click", () => selectPaymentMethod("QRIS"));
+    if (btnPayDebt) btnPayDebt.addEventListener("click", () => selectPaymentMethod("Bon"));
+
+    if (modalPaymentInput) modalPaymentInput.addEventListener("input", updateCashChange);
+    if (debtDPInput) debtDPInput.addEventListener("input", updateDebtRemaining);
+
+    if (btnConfirmPayment) btnConfirmPayment.addEventListener("click", processCheckout);
+    if (btnClosePaymentModal) btnClosePaymentModal.addEventListener("click", () => paymentModal.style.display = "none");
+
     if (btnScanCashier) btnScanCashier.addEventListener("click", openScanner);
     if (btnCloseScanner) btnCloseScanner.addEventListener("click", closeScanner);
 }
