@@ -30,6 +30,7 @@
         <nav class="main-nav">
             <a href="index.html" class="nav-link active">📦 Inventori</a>
             <a href="cashier.html" class="nav-link">🛒 Kasir</a>
+            <a href="debts.html" class="nav-link">📝 Bon / Utang</a>
             <a href="history.html" class="nav-link">📋 Riwayat Transaksi</a>
             <a href="report.html" class="nav-link">📊 Laporan</a>
         </nav>
@@ -51,22 +52,36 @@
                 <input type="hidden" id="itemImageUrl">
 
                 <div class="form-group">
-                    <label for="namaBarang">Nama Barang / Produk:</label>
+                    <label for="namaBarang">Nama Barang / Produk:*</label>
                     <input type="text" id="namaBarang" required placeholder="Contoh: Minyak Goreng 1L">
                 </div>
 
                 <div class="form-group">
-                    <label for="stokBarang">Stok (Jumlah):</label>
+                    <label for="kategoriBarang">Kategori Produk:*</label>
+                    <select id="kategoriBarang" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box;" required>
+                        <option value="">-- Pilih Kategori --</option>
+                        <option value="Sembako">🌾 Sembako & Timbangan</option>
+                        <option value="Es Krim">🍦 Pendingin & Es Krim Glico</option>
+                        <option value="Rokok">🚬 Rokok & Eceran</option>
+                        <option value="Minuman">🥤 Minuman & Galon</option>
+                        <option value="Makanan">🍞 Makanan / Snack</option>
+                        <option value="Kebutuhan">🧼 Sabun & Kebutuhan Rumah</option>
+                        <option value="Lainnya">📦 Lain-lain</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="stokBarang">Stok (Jumlah):*</label>
                     <input type="number" id="stokBarang" min="0" required placeholder="0">
                 </div>
 
                 <div class="form-group">
-                    <label for="hargaBeli">Harga Beli / Modal (Rp):</label>
+                    <label for="hargaBeli">Harga Beli / Modal (Rp):*</label>
                     <input type="number" id="hargaBeli" min="0" required placeholder="0">
                 </div>
 
                 <div class="form-group">
-                    <label for="hargaJual">Harga Jual (Rp):</label>
+                    <label for="hargaJual">Harga Jual (Rp):*</label>
                     <input type="number" id="hargaJual" min="0" required placeholder="0">
                 </div>
 
@@ -77,12 +92,23 @@
             </form>
         </div>
 
-        <div class="sort-box" style="margin-top: 20px;">
-            <label for="searchInput">🔍 Cari Barang:</label>
-            <input type="text" id="searchInput" placeholder="Ketik nama barang...">
+        <!-- Filter Search & Kategori -->
+        <div class="sort-box" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
+            <input type="text" id="searchInput" placeholder="🔍 Cari nama barang..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
+            
+            <select id="filterCategory" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box;">
+                <option value="">📂 Semua Kategori</option>
+                <option value="Sembako">🌾 Sembako & Timbangan</option>
+                <option value="Es Krim">🍦 Pendingin & Es Krim Glico</option>
+                <option value="Rokok">🚬 Rokok & Eceran</option>
+                <option value="Minuman">🥤 Minuman & Galon</option>
+                <option value="Makanan">🍞 Makanan / Snack</option>
+                <option value="Kebutuhan">🧼 Sabun & Kebutuhan Rumah</option>
+                <option value="Lainnya">📦 Lain-lain</option>
+            </select>
         </div>
 
-        <div class="list-box">
+        <div class="list-box" style="margin-top: 15px;">
             <h2>📦 Daftar Stok Barang</h2>
             <div id="itemList"></div>
         </div>
@@ -92,7 +118,7 @@
     <div id="photoOptionModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
         <div style="background: white; padding: 20px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
             <h3 style="margin-top: 0;">Foto Berhasil Diambil</h3>
-            <p style="color: var(--text-muted); font-size: 14px;">Pilih tindakan untuk foto barang ini:</p>
+            <p style="color: #666; font-size: 14px;">Pilih tindakan untuk foto barang ini:</p>
             
             <div id="modalPreviewBox" style="margin: 15px 0;">
                 <img id="modalImagePreview" src="" alt="Preview" style="max-width: 100%; max-height: 150px; border-radius: 8px;">
@@ -120,6 +146,6 @@
     <div id="toast" class="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
-    <script src="script.js?v=4.0"></script>
+    <script src="script.js?v=5.0"></script>
 </body>
 </html>

@@ -5,11 +5,7 @@ const SUPABASE_URL = "https://dyyzsuleugpgiqutebwv.supabase.co";
 const SUPABASE_KEY = "sb_publishable_hKWVFsDZC539-T3nVyS13g_ME3HC0AP";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false
-    }
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
 });
 
 // ===================================
@@ -17,7 +13,6 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, 
 // ===================================
 let items = [];
 let currentUploadedFile = null;
-let currentUploadedUrl = "";
 
 const itemForm = document.getElementById("itemForm");
 const formTitle = document.getElementById("formTitle");
@@ -28,10 +23,12 @@ const stokBarangInput = document.getElementById("stokBarang");
 const hargaBeliInput = document.getElementById("hargaBeli");
 const hargaJualInput = document.getElementById("hargaJual");
 const kategoriInput = document.getElementById("kategoriBarang");
+
 const btnSubmit = document.getElementById("btnSubmit");
 const btnCancel = document.getElementById("btnCancel");
 const itemList = document.getElementById("itemList");
 const searchInput = document.getElementById("searchInput");
+const filterCategory = document.getElementById("filterCategory");
 
 // Modal & OCR Elements
 const cameraInput = document.getElementById("cameraInput");
@@ -66,15 +63,8 @@ function showToast(message) {
 
 function generateItemCode(item) {
     if (item.barcode) return item.barcode;
-    
-    let prefix = "BRG";
-    if (item.kategori) {
-        prefix = item.kategori.substring(0, 3).toUpperCase();
-    } else if (item.nama_barang) {
-        prefix = item.nama_barang.substring(0, 3).toUpperCase();
-    }
-    
-    const paddedId = String(item.id || Date.now()).padStart(4, "0");
+    const prefix = item.kategori ? item.kategori.substring(0, 3).toUpperCase() : "BRG";
+    const paddedId = String(item.id || Date.now()).slice(-4);
     return `${prefix}-${paddedId}`;
 }
 
@@ -86,147 +76,36 @@ async function processOCR(file) {
 
     statusOCR.style.display = 'block';
     statusOCR.style.color = '#333';
-    statusOCR.innerText = '⏳ Memulai pemrosesan gambar...';
+    statusOCR.innerText = '⏳ Membaca teks kemasan...';
 
     try {
-        if (typeof Tesseract === 'undefined') {
-            throw new Error('Library Tesseract.js belum terkonfigurasi di index.html');
-        }
+        if (typeof Tesseract === 'undefined') throw new Error('Tesseract tidak tersedia');
 
-        const result = await Tesseract.recognize(
-            file,
-            'ind+eng',
-            {
-                logger: m => {
-                    if (m.status === 'recognizing text') {
-                        const persen = Math.round(m.progress * 100);
-                        statusOCR.innerText = `⏳ Membaca teks kemasan: ${persen}%`;
-                    }
+        const result = await Tesseract.recognize(file, 'ind+eng', {
+            logger: m => {
+                if (m.status === 'recognizing text') {
+                    statusOCR.innerText = `⏳ Membaca teks: ${Math.round(m.progress * 100)}%`;
                 }
             }
-        );
+        });
 
         let rawText = result.data.text || "";
-        
-        let lines = rawText
-            .split('\n')
-            .map(line => line.replace(/[^a-zA-Z0-9\s]/g, '').trim())
-            .filter(line => line.length > 2);
+        let lines = rawText.split('\n').map(l => l.replace(/[^a-zA-Z0-9\s]/g, '').trim()).filter(l => l.length > 2);
 
         if (lines.length > 0) {
             let predictedName = lines.slice(0, 2).join(' ');
-            
-            if (namaBarangInput) {
-                namaBarangInput.value = predictedName;
-            }
-
+            if (namaBarangInput) namaBarangInput.value = predictedName;
             statusOCR.style.color = 'green';
-            statusOCR.innerText = `✅ Teks terdeteksi: "${predictedName}". Silakan rapikan jika perlu.`;
+            statusOCR.innerText = `✅ Teks terdeteksi: "${predictedName}"`;
         } else {
             statusOCR.style.color = 'orange';
-            statusOCR.innerText = '⚠️ Teks tidak terdeteksi. Silakan ketik nama barang secara manual.';
+            statusOCR.innerText = '⚠️ Teks tidak terdeteksi. Silakan isi manual.';
         }
     } catch (error) {
         console.error('Error OCR:', error);
         statusOCR.style.color = 'red';
-        statusOCR.innerText = '❌ Gagal membaca foto. Pastikan dibuka via Live Server atau Web Hosting.';
+        statusOCR.innerText = '❌ Gagal membaca foto.';
     }
-}
-
-// ===================================
-// PRINT LABEL STIKER (WITH BARCODE)
-// ===================================
-function printLabel(item) {
-    const printWindow = window.open('', '_blank', 'width=400,height=400');
-    if (!printWindow) {
-        alert("Pop-up diblokir! Harap izinkan pop-up di browser Anda.");
-        return;
-    }
-
-    const itemCode = generateItemCode(item);
-
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Label - ${item.nama_barang}</title>
-            <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"><\/script>
-            <style>
-                @page {
-                    size: 50mm 30mm;
-                    margin: 0;
-                }
-                body {
-                    font-family: Arial, sans-serif;
-                    margin: 0;
-                    padding: 4px;
-                    text-align: center;
-                    box-sizing: border-box;
-                }
-                .store {
-                    font-size: 8px;
-                    font-weight: bold;
-                    color: #555;
-                    text-transform: uppercase;
-                }
-                .title {
-                    font-size: 10px;
-                    font-weight: bold;
-                    margin: 1px 0;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                }
-                .price {
-                    font-size: 13px;
-                    font-weight: bold;
-                    color: #000;
-                    margin: 1px 0;
-                }
-                #barcode {
-                    width: 90%;
-                    height: 35px;
-                    margin-top: 2px;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="store">Toko Ibu Irma</div>
-            <div class="title">${item.nama_barang}</div>
-            <div class="price">${formatRupiah(item.harga_jual)}</div>
-            <svg id="barcode"></svg>
-
-            <script>
-                function doPrint() {
-                    try {
-                        JsBarcode("#barcode", "${itemCode}", {
-                            format: "CODE128",
-                            lineColor: "#000",
-                            width: 2,
-                            height: 35,
-                            displayValue: true,
-                            fontSize: 10,
-                            margin: 0
-                        });
-                    } catch (e) {
-                        console.error("Gagal generate barcode:", e);
-                    }
-
-                    window.print();
-                    window.close();
-                }
-
-                if (document.readyState === 'complete') {
-                    doPrint();
-                } else {
-                    window.onload = doPrint;
-                }
-            <\/script>
-        </body>
-        </html>
-    `);
-
-    printWindow.document.close();
 }
 
 // ===================================
@@ -248,21 +127,36 @@ async function loadItems() {
     renderItems();
 }
 
+async function quickUpdateStock(itemId, delta) {
+    const targetItem = items.find(i => i.id === itemId);
+    if (!targetItem) return;
+
+    const newStock = Math.max(0, (targetItem.stok || 0) + delta);
+
+    const { error } = await supabaseClient
+        .from("barang")
+        .update({ stok: newStock })
+        .eq("id", itemId);
+
+    if (error) {
+        console.error(error);
+        showToast("Gagal memperbarui stok!");
+        return;
+    }
+
+    targetItem.stok = newStock;
+    renderItems();
+    showToast(`Stok "${targetItem.nama_barang}" diubah jadi ${newStock}`);
+}
+
 async function uploadImageToSupabase(file) {
     const fileName = `${Date.now()}_${file.name.replace(/\s+/g, '_')}`;
     const { data, error } = await supabaseClient.storage
         .from("produk-image")
         .upload(fileName, file);
 
-    if (error) {
-        console.error("Gagal unggah foto:", error);
-        return null;
-    }
-
-    const { data: publicUrlData } = supabaseClient.storage
-        .from("produk-image")
-        .getPublicUrl(fileName);
-
+    if (error) return null;
+    const { data: publicUrlData } = supabaseClient.storage.from("produk-image").getPublicUrl(fileName);
     return publicUrlData ? publicUrlData.publicUrl : null;
 }
 
@@ -272,87 +166,121 @@ async function uploadImageToSupabase(file) {
 function renderItems() {
     if (!itemList) return;
     itemList.replaceChildren();
-    const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
 
-    const filtered = items.filter(item => 
-        (item.nama_barang || "").toLowerCase().includes(keyword) ||
-        (item.kategori || "").toLowerCase().includes(keyword)
-    );
+    const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
+    const selectedCat = filterCategory ? filterCategory.value : "";
+
+    const filtered = items.filter(item => {
+        const matchesName = (item.nama_barang || "").toLowerCase().includes(keyword);
+        const matchesCategory = selectedCat === "" || (item.kategori || "") === selectedCat;
+        return matchesName && matchesCategory;
+    });
 
     if (filtered.length === 0) {
         const emptyMsg = document.createElement("p");
         emptyMsg.style.textAlign = "center";
-        emptyMsg.style.color = "var(--text-muted)";
+        emptyMsg.style.color = "#888";
+        emptyMsg.style.padding = "20px";
         emptyMsg.textContent = "Barang tidak ditemukan.";
         itemList.appendChild(emptyMsg);
         return;
     }
 
     filtered.forEach(item => {
-        const card = createItemCard(item);
-        itemList.appendChild(card);
+        itemList.appendChild(createItemCard(item));
     });
 }
 
 function createItemCard(item) {
     const card = document.createElement("div");
-    card.className = "item-card";
-    card.style.display = "flex";
-    card.style.justifyContent = "space-between";
-    card.style.alignItems = "center";
+    card.style.background = "#fff";
     card.style.padding = "12px";
     card.style.marginBottom = "10px";
-    card.style.background = "#fff";
     card.style.borderRadius = "8px";
     card.style.boxShadow = "0 2px 4px rgba(0,0,0,0.05)";
 
-    const infoBox = document.createElement("div");
-    
+    const header = document.createElement("div");
+    header.style.display = "flex";
+    header.style.justifyContent = "space-between";
+    header.style.alignItems = "flex-start";
+
+    const titleBox = document.createElement("div");
     const title = document.createElement("h3");
-    title.style.margin = "0 0 4px 0";
-    title.textContent = `${item.nama_barang} [${generateItemCode(item)}]`;
+    title.style.margin = "0 0 2px 0";
+    title.textContent = item.nama_barang;
 
-    const stok = document.createElement("p");
-    stok.style.margin = "0";
-    stok.style.fontSize = "14px";
-    stok.style.color = "var(--text-muted)";
-    stok.textContent = `Stok: ${item.stok}`;
+    const catBadge = document.createElement("small");
+    catBadge.style.background = "#f0f0f0";
+    catBadge.style.padding = "2px 6px";
+    catBadge.style.borderRadius = "4px";
+    catBadge.style.color = "#555";
+    catBadge.textContent = item.kategori || "Tanpa Kategori";
 
-    const harga = document.createElement("p");
-    harga.style.margin = "4px 0 0 0";
-    harga.style.fontWeight = "bold";
-    harga.style.color = "var(--primary)";
-    harga.textContent = `Jual: ${formatRupiah(item.harga_jual)} | Modal: ${formatRupiah(item.harga_beli)}`;
+    titleBox.append(title, catBadge);
 
-    infoBox.append(title, stok, harga);
+    const price = document.createElement("div");
+    price.style.textAlign = "right";
+    price.style.fontWeight = "bold";
+    price.style.color = "#D67A67";
+    price.textContent = formatRupiah(item.harga_jual);
 
-    const actionBox = document.createElement("div");
-    actionBox.style.display = "flex";
-    actionBox.style.gap = "6px";
-    actionBox.style.flexWrap = "wrap";
+    header.append(titleBox, price);
 
-    const btnLabel = document.createElement("button");
-    btnLabel.className = "btn";
-    btnLabel.style.background = "#27ae60";
-    btnLabel.style.color = "#fff";
-    btnLabel.textContent = "🏷️ Label";
-    btnLabel.addEventListener("click", () => printLabel(item));
+    // Controls Stok [+] & [-]
+    const stockRow = document.createElement("div");
+    stockRow.style.display = "flex";
+    stockRow.style.justifyContent = "space-between";
+    stockRow.style.alignItems = "center";
+    stockRow.style.marginTop = "10px";
+    stockRow.style.paddingTop = "8px";
+    stockRow.style.borderTop = "1px dashed #eee";
+
+    const stockText = document.createElement("span");
+    stockText.style.fontSize = "14px";
+    stockText.style.fontWeight = "bold";
+    stockText.textContent = `Stok: ${item.stok}`;
+
+    const quickBox = document.createElement("div");
+    quickBox.style.display = "flex";
+    quickBox.style.gap = "6px";
+    quickBox.style.alignItems = "center";
+
+    const minusBtn = document.createElement("button");
+    minusBtn.className = "btn";
+    minusBtn.style.background = "#e74c3c";
+    minusBtn.style.color = "#fff";
+    minusBtn.style.padding = "4px 10px";
+    minusBtn.textContent = "➖";
+    minusBtn.addEventListener("click", () => quickUpdateStock(item.id, -1));
+
+    const plusBtn = document.createElement("button");
+    plusBtn.className = "btn";
+    plusBtn.style.background = "#27ae60";
+    plusBtn.style.color = "#fff";
+    plusBtn.style.padding = "4px 10px";
+    plusBtn.textContent = "➕";
+    plusBtn.addEventListener("click", () => quickUpdateStock(item.id, 1));
 
     const btnEdit = document.createElement("button");
     btnEdit.className = "btn btn-secondary";
+    btnEdit.style.padding = "4px 8px";
+    btnEdit.style.fontSize = "12px";
     btnEdit.textContent = "✏️ Edit";
     btnEdit.addEventListener("click", () => populateForm(item));
 
     const btnDelete = document.createElement("button");
     btnDelete.className = "btn";
-    btnDelete.style.background = "#e74c3c";
+    btnDelete.style.background = "#333";
     btnDelete.style.color = "#fff";
-    btnDelete.textContent = "🗑️ Hapus";
+    btnDelete.style.padding = "4px 8px";
+    btnDelete.style.fontSize = "12px";
+    btnDelete.textContent = "🗑️";
     btnDelete.addEventListener("click", () => deleteItem(item.id, item.nama_barang));
 
-    actionBox.append(btnLabel, btnEdit, btnDelete);
-    card.append(infoBox, actionBox);
+    quickBox.append(minusBtn, plusBtn, btnEdit, btnDelete);
+    stockRow.append(stockText, quickBox);
 
+    card.append(header, stockRow);
     return card;
 }
 
@@ -380,7 +308,6 @@ function resetForm() {
     btnSubmit.textContent = "Simpan Barang";
     btnCancel.style.display = "none";
     currentUploadedFile = null;
-    currentUploadedUrl = "";
     if (statusOCR) statusOCR.style.display = "none";
 }
 
@@ -395,7 +322,7 @@ async function handleSubmit(e) {
     const stok = parseInt(stokBarangInput.value, 10);
     const harga_beli = parseFloat(hargaBeliInput.value);
     const harga_jual = parseFloat(hargaJualInput.value);
-    const kategori = kategoriInput ? kategoriInput.value.trim() : "";
+    const kategori = kategoriInput ? kategoriInput.value : "";
 
     let image_url = itemImageUrlInput.value;
 
@@ -405,41 +332,15 @@ async function handleSubmit(e) {
         if (uploadedUrl) image_url = uploadedUrl;
     }
 
-    const prefix = kategori ? kategori.substring(0, 3).toUpperCase() : nama_barang.substring(0, 3).toUpperCase();
-    const generatedBarcode = `${prefix}-${String(id || Date.now()).slice(-4)}`;
-
-    const payload = { 
-        nama_barang, 
-        stok, 
-        harga_beli, 
-        harga_jual, 
-        image_url,
-        kategori,
-        barcode: generatedBarcode
-    };
+    const payload = { nama_barang, stok, harga_beli, harga_jual, image_url, kategori };
 
     if (id) {
-        const { error } = await supabaseClient
-            .from("barang")
-            .update(payload)
-            .eq("id", id);
-
-        if (error) {
-            console.error(error);
-            showToast("Gagal memperbarui barang!");
-            return;
-        }
+        const { error } = await supabaseClient.from("barang").update(payload).eq("id", id);
+        if (error) return showToast("Gagal memperbarui barang!");
         showToast("Barang berhasil diperbarui!");
     } else {
-        const { error } = await supabaseClient
-            .from("barang")
-            .insert([payload]);
-
-        if (error) {
-            console.error(error);
-            showToast("Gagal menambah barang!");
-            return;
-        }
+        const { error } = await supabaseClient.from("barang").insert([payload]);
+        if (error) return showToast("Gagal menambah barang!");
         showToast("Barang baru berhasil ditambahkan!");
     }
 
@@ -448,32 +349,22 @@ async function handleSubmit(e) {
 }
 
 async function deleteItem(id, name) {
-    if (!confirm(`Yakin ingin menghapus "${name}"?`)) return;
+    if (!confirm(`Hapus "${name}" dari stok?`)) return;
 
-    const { error } = await supabaseClient
-        .from("barang")
-        .delete()
-        .eq("id", id);
-
-    if (error) {
-        console.error(error);
-        showToast("Gagal menghapus barang!");
-        return;
-    }
+    const { error } = await supabaseClient.from("barang").delete().eq("id", id);
+    if (error) return showToast("Gagal menghapus barang!");
 
     showToast("Barang berhasil dihapus!");
     await loadItems();
 }
 
-// Handler Foto Kamera (Langsung Panggil OCR Otomatis)
+// Camera & OCR Handlers
 if (cameraInput) {
     cameraInput.addEventListener("change", (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         currentUploadedFile = file;
-
-        // 1. Tampilkan Preview Modal
         const reader = new FileReader();
         reader.onload = function(evt) {
             modalImagePreview.src = evt.target.result;
@@ -481,18 +372,13 @@ if (cameraInput) {
             photoOptionModal.style.display = "flex";
         };
         reader.readAsDataURL(file);
-
-        // 2. LANGSUNG EKSEKUSI OCR DI BACKGROUND
         processOCR(file);
     });
 }
 
-// Modal Options
 if (btnOptionNew) {
     btnOptionNew.addEventListener("click", () => {
         photoOptionModal.style.display = "none";
-        
-        // Fokuskan ke nama barang & scroll halus ke form
         if (namaBarangInput) namaBarangInput.focus();
         window.scrollTo({ top: 0, behavior: "smooth" });
     });
@@ -501,16 +387,12 @@ if (btnOptionNew) {
 if (btnOptionExisting) {
     btnOptionExisting.addEventListener("click", () => {
         selectExistingItem.replaceChildren();
-        
-        if (items.length === 0) {
-            alert("Belum ada daftar barang!");
-            return;
-        }
+        if (items.length === 0) return alert("Belum ada daftar barang!");
 
         items.forEach(item => {
             const opt = document.createElement("option");
             opt.value = item.id;
-            opt.textContent = `${item.nama_barang} (Stok Saat Ini: ${item.stok})`;
+            opt.textContent = `${item.nama_barang} (Stok: ${item.stok})`;
             selectExistingItem.appendChild(opt);
         });
 
@@ -534,22 +416,8 @@ if (btnSubmitAddStock) {
         const targetItem = items.find(i => i.id == selectedId);
         if (!targetItem) return;
 
-        const newStok = (targetItem.stok || 0) + addQty;
-
-        const { error } = await supabaseClient
-            .from("barang")
-            .update({ stok: newStok })
-            .eq("id", selectedId);
-
-        if (error) {
-            console.error(error);
-            showToast("Gagal menambah stok!");
-            return;
-        }
-
-        showToast(`Stok ${targetItem.nama_barang} berhasil ditambahkan!`);
+        await quickUpdateStock(targetItem.id, addQty);
         photoOptionModal.style.display = "none";
-        await loadItems();
     });
 }
 
@@ -557,17 +425,10 @@ if (btnSubmitAddStock) {
 // INITIALIZATION
 // ===================================
 function init() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-            for (let registration of registrations) {
-                registration.unregister();
-            }
-        });
-    }
-
     if (itemForm) itemForm.addEventListener("submit", handleSubmit);
     if (btnCancel) btnCancel.addEventListener("click", resetForm);
     if (searchInput) searchInput.addEventListener("input", renderItems);
+    if (filterCategory) filterCategory.addEventListener("change", renderItems);
 
     loadItems();
 }
