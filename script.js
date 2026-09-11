@@ -30,6 +30,7 @@ const btnCancel = document.getElementById("btnCancel");
 const itemList = document.getElementById("itemList");
 const searchInput = document.getElementById("searchInput");
 const filterCategory = document.getElementById("filterCategory");
+const btnWaStok = document.getElementById("btnWaStok");
 
 // Modal & OCR Elements
 const cameraInput = document.getElementById("cameraInput");
@@ -125,7 +126,8 @@ async function quickUpdateStock(itemId, delta) {
     const targetItem = items.find(i => i.id === itemId);
     if (!targetItem) return;
 
-    const newStock = Math.max(0, (targetItem.stok || 0) + delta);
+    const currentStock = parseFloat(targetItem.stok || 0);
+    const newStock = Math.max(0, parseFloat((currentStock + delta).toFixed(3)));
 
     const { error } = await supabaseClient
         .from("barang")
@@ -193,6 +195,11 @@ function createItemCard(item) {
     card.style.borderRadius = "8px";
     card.style.boxShadow = "0 2px 4px rgba(0,0,0,0.05)";
 
+    const isLowStock = (item.stok || 0) <= 3;
+    if (isLowStock) {
+        card.style.borderLeft = "4px solid #e74c3c";
+    }
+
     const header = document.createElement("div");
     header.style.display = "flex";
     header.style.justifyContent = "space-between";
@@ -243,7 +250,16 @@ function createItemCard(item) {
     const stockText = document.createElement("span");
     stockText.style.fontSize = "14px";
     stockText.style.fontWeight = "bold";
-    stockText.textContent = `Stok: ${item.stok}`;
+
+    if (item.stok === 0) {
+        stockText.style.color = "#e74c3c";
+        stockText.textContent = "Stok: HABIS ❌";
+    } else if (isLowStock) {
+        stockText.style.color = "#e67e22";
+        stockText.textContent = `Stok: ${item.stok} ⚠️ (Menipis)`;
+    } else {
+        stockText.textContent = `Stok: ${item.stok}`;
+    }
 
     const quickBox = document.createElement("div");
     quickBox.style.display = "flex";
@@ -326,7 +342,7 @@ async function handleSubmit(e) {
     const id = itemIdInput.value;
     const nama_barang = namaBarangInput.value.trim();
     const barcode = barcodeInput ? barcodeInput.value.trim() : "";
-    const stok = parseInt(stokBarangInput.value, 10);
+    const stok = parseFloat(stokBarangInput.value);
     const harga_beli = parseFloat(hargaBeliInput.value);
     const harga_jual = parseFloat(hargaJualInput.value);
     const kategori = kategoriInput ? kategoriInput.value : "";
@@ -363,6 +379,31 @@ async function deleteItem(id, name) {
 
     showToast("Barang berhasil dihapus!");
     await loadItems();
+}
+
+// WA Sender untuk Stok Habis / Menipis (Stok <= 3)
+if (btnWaStok) {
+    btnWaStok.addEventListener("click", () => {
+        const lowStockItems = items.filter(item => (item.stok || 0) <= 3);
+
+        if (lowStockItems.length === 0) {
+            return alert("Semua stok barang masih aman! 👍");
+        }
+
+        let message = "*DAFTAR BELANJAAN / STOK MENIPIS - WARUNG KLONTONGIN*\n";
+        message += "-----------------------------------------\n";
+
+        lowStockItems.forEach((item, index) => {
+            const status = item.stok === 0 ? "❌ (HABIS)" : `⚠️ (Sisa: ${item.stok})`;
+            message += `${index + 1}. *${item.nama_barang}* ${status}\n`;
+        });
+
+        message += "-----------------------------------------\n";
+        message += "Mohon diproses ya, terima kasih!";
+
+        const encodedMessage = encodeURIComponent(message);
+        window.open(`https://wa.me/?text=${encodedMessage}`, "_blank");
+    });
 }
 
 // Camera & OCR Handlers

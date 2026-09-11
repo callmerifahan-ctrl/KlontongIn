@@ -56,7 +56,6 @@
                     <input type="text" id="namaBarang" required placeholder="Contoh: Es Krim Frost Bite Cookies">
                 </div>
 
-                <!-- Kategori di Form Input (index.html) -->
                 <div class="form-group">
                     <label for="kategoriBarang">Kategori Produk:*</label>
                     <select id="kategoriBarang" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box;" required>
@@ -81,7 +80,7 @@
 
                 <div class="form-group">
                     <label for="stokBarang">Stok (Jumlah):*</label>
-                    <input type="number" id="stokBarang" min="0" required placeholder="0">
+                    <input type="number" id="stokBarang" min="0" step="any" required placeholder="0">
                 </div>
 
                 <div class="form-group">
@@ -105,7 +104,6 @@
         <div class="sort-box" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
             <input type="text" id="searchInput" placeholder="🔍 Cari nama barang / barcode..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
             
-            <!-- Kategori di Filter Daftar Stok (index.html) -->
             <select id="filterCategory" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box;">
                 <option value="">📂 Semua Kategori</option>
                 <option value="Sembako">🌾 Sembako & Bahan Pokok</option>
@@ -122,7 +120,12 @@
         </div>
 
         <div class="list-box" style="margin-top: 15px;">
-            <h2>📦 Daftar Stok Barang</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h2 style="margin: 0;">📦 Daftar Stok Barang</h2>
+                <button id="btnWaStok" class="btn" style="background: #25D366; color: white; font-weight: bold; padding: 8px 12px; font-size: 13px;">
+                    📱 Kirim List Belanja ke WA
+                </button>
+            </div>
             <div id="itemList"></div>
         </div>
     </div>
@@ -159,6 +162,6 @@
     <div id="toast" class="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
-    <script src="script.js?v=6.0"></script>
+    <script src="script.js?v=7.0"></script>
 </body>
 </html>
