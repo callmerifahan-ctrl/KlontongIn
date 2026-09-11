@@ -59,7 +59,7 @@ function formatRupiah(angka) {
     return "Rp " + Number(angka || 0).toLocaleString("id-ID");
 }
 
-// Fungsi pembulatan pecahan desimal timbangan ke kelipatan Rp 100 terdekat
+// Pembulatan pecahan desimal timbangan ke kelipatan Rp 100 terdekat
 function roundPrice(rawPrice) {
     return Math.round(rawPrice / 100) * 100;
 }
@@ -111,7 +111,7 @@ async function generateTransactionCode() {
 }
 
 // ===================================
-// CART OPERATIONS (SUPPORT DESIMAL TIMBANGAN)
+// CART OPERATIONS
 // ===================================
 function addToCart(itemId) {
     const inventoryItem = getItemById(itemId);
@@ -252,6 +252,7 @@ async function processCheckout() {
     btnConfirmPayment.disabled = true;
     btnConfirmPayment.textContent = "Memproses...";
 
+    // 1. Potong Stok Barang di Supabase
     for (const cartItem of cart) {
         const item = getItemById(cartItem.id);
         const newStock = parseFloat((item.stock - cartItem.qty).toFixed(3));
@@ -270,6 +271,7 @@ async function processCheckout() {
         }
     }
 
+    // 2. Simpan Transaksi Utama
     const transactionCode = await generateTransactionCode();
     const newTransaction = {
         kode_transaksi: transactionCode,
@@ -288,14 +290,30 @@ async function processCheckout() {
         .from("transaksi")
         .insert([newTransaction]);
 
-    btnConfirmPayment.disabled = false;
-    btnConfirmPayment.textContent = "✅ Simpan Transaksi";
-
     if (transactionError) {
         console.error(transactionError);
-        alert("Gagal menyimpan transaksi!");
+        alert("Gagal menyimpan transaksi! Pastikan SQL penambahan kolom utang sudah dijalankan di Supabase.");
+        btnConfirmPayment.disabled = false;
+        btnConfirmPayment.textContent = "✅ Simpan Transaksi";
         return;
     }
+
+    // 3. Catat ke Tabel Riwayat Bon jika berupa Bon/Utang
+    if (isDebt && debtRemaining > 0) {
+        await supabaseClient
+            .from("riwayat_bon")
+            .insert([{
+                nama_pelanggan: customerName,
+                kode_transaksi: transactionCode,
+                tipe: "UTANG_BARU",
+                nominal: debtRemaining,
+                keterangan: `Bon Transaksi ${transactionCode}`,
+                tanggal: new Date().toISOString()
+            }]);
+    }
+
+    btnConfirmPayment.disabled = false;
+    btnConfirmPayment.textContent = "✅ Simpan Transaksi";
 
     paymentModal.style.display = "none";
     clearCart();
@@ -390,10 +408,10 @@ function createCashierCard(item) {
     title.textContent = item.name;
 
     const price = document.createElement("p");
-    price.textContent = `${formatRupiah(item.sellPrice)} / kg`;
+    price.textContent = `${formatRupiah(item.sellPrice)}`;
 
     const stock = document.createElement("small");
-    stock.textContent = `Stok : ${item.stock} kg`;
+    stock.textContent = `Stok : ${item.stock}`;
 
     const addButton = document.createElement("button");
     addButton.textContent = "➕ Tambah";
@@ -441,17 +459,12 @@ function createCartItem(item) {
     qtyInput.style.cssText = "width: 65px; padding: 4px; text-align: center; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;";
     qtyInput.addEventListener("change", (e) => updateCartQtyDirect(item.id, e.target.value));
 
-    const unitText = document.createElement("span");
-    unitText.style.fontSize = "12px";
-    unitText.style.color = "#666";
-    unitText.textContent = "kg";
-
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "❌";
     deleteBtn.style.cssText = "background: none; border: none; cursor: pointer; padding: 2px 4px;";
     deleteBtn.addEventListener("click", () => updateCartQtyDirect(item.id, 0));
 
-    controls.append(qtyInput, unitText, deleteBtn);
+    controls.append(qtyInput, deleteBtn);
     li.append(infoBox, controls);
 
     return li;
