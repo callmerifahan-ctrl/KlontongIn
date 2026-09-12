@@ -27,9 +27,18 @@
         <nav class="main-nav">
             <a href="index.html" class="nav-link">📦 Inventori</a>
             <a href="cashier.html" class="nav-link">🛒 Kasir</a>
+            <a href="debts.html" class="nav-link">📝 Bon / Utang</a>
             <a href="history.html" class="nav-link">📋 Riwayat Transaksi</a>
             <a href="report.html" class="nav-link active">📊 Laporan</a>
         </nav>
+
+        <!-- Filter Periode Laporan -->
+        <div style="margin-bottom: 15px; display: flex; gap: 8px;">
+            <button id="btnFilterToday" class="btn" style="flex: 1; background: #D67A67; color: white; font-weight: bold; font-size: 13px;">Hari Ini</button>
+            <button id="btnFilterWeek" class="btn btn-secondary" style="flex: 1; font-size: 13px;">7 Hari</button>
+            <button id="btnFilterMonth" class="btn btn-secondary" style="flex: 1; font-size: 13px;">Bulan Ini</button>
+            <button id="btnFilterAll" class="btn btn-secondary" style="flex: 1; font-size: 13px;">Semua</button>
+        </div>
 
         <div class="dashboard-box">
             <div class="dashboard-card">
@@ -54,13 +63,13 @@
             </div>
         </div>
 
-        <div class="report-box">
+        <div class="report-box" style="margin-top: 20px;">
             <h2>🏆 Produk Terlaris</h2>
             <ul id="topProductsList" style="padding-left: 20px;"></ul>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
-    <script src="report.js?v=2.0"></script>
+    <script src="report.js?v=3.0"></script>
 </body>
 </html>

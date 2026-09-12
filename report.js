@@ -5,21 +5,26 @@ const SUPABASE_URL = "https://dyyzsuleugpgiqutebwv.supabase.co";
 const SUPABASE_KEY = "sb_publishable_hKWVFsDZC539-T3nVyS13g_ME3HC0AP";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-    auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false
-    }
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
 });
 
 // ===================================
-// DOM ELEMENTS
+// STATE & DOM ELEMENTS
 // ===================================
+let allTransactions = [];
+let allProductsMap = {};
+let currentFilter = "today"; // 'today', 'week', 'month', 'all'
+
 const reportOmzet = document.getElementById("reportOmzet");
 const reportKeuntungan = document.getElementById("reportKeuntungan");
 const reportTotalTransaksi = document.getElementById("reportTotalTransaksi");
 const reportTerjual = document.getElementById("reportTerjual");
 const topProductsList = document.getElementById("topProductsList");
+
+const btnFilterToday = document.getElementById("btnFilterToday");
+const btnFilterWeek = document.getElementById("btnFilterWeek");
+const btnFilterMonth = document.getElementById("btnFilterMonth");
+const btnFilterAll = document.getElementById("btnFilterAll");
 
 // ===================================
 // UTILITIES
@@ -28,97 +33,146 @@ function formatRupiah(angka) {
     return "Rp " + Number(angka || 0).toLocaleString("id-ID");
 }
 
-// ===================================
-// LOAD & CALCULATE REPORT
-// ===================================
-async function loadReportData() {
-    const { data: barangData, error: errBarang } = await supabaseClient
-        .from("barang")
-        .select("*");
+function formatQty(qty) {
+    const num = parseFloat(qty || 0);
+    return Number.isInteger(num) ? num : parseFloat(num.toFixed(2));
+}
 
-    if (errBarang) {
-        console.error(errBarang);
-        alert("Gagal memuat data barang!");
+function isSameDay(d1, d2) {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+}
+
+// ===================================
+// DATA LOADERS
+// ===================================
+async function loadData() {
+    // 1. Ambil data modal/harga_beli dari master barang
+    const { data: barangData } = await supabaseClient.from("barang").select("id, nama_barang, harga_beli");
+    if (barangData) {
+        barangData.forEach(p => {
+            allProductsMap[p.id] = parseFloat(p.harga_beli || 0);
+            allProductsMap[p.nama_barang] = parseFloat(p.harga_beli || 0);
+        });
+    }
+
+    // 2. Ambil transaksi
+    const { data: trxData, error } = await supabaseClient.from("transaksi").select("*").order("tanggal", { ascending: false });
+    if (error) {
+        console.error("Gagal ambil laporan:", error);
         return;
     }
 
-    const barangMap = {};
-    (barangData || []).forEach(b => {
-        barangMap[b.id] = b;
+    allTransactions = trxData || [];
+    renderReport();
+}
+
+// ===================================
+// REPORT CALCULATOR & RENDERER
+// ===================================
+function filterTransactions() {
+    const now = new Date();
+    
+    return allTransactions.filter(trx => {
+        const trxDate = new Date(trx.tanggal);
+
+        if (currentFilter === "today") {
+            return isSameDay(trxDate, now);
+        } else if (currentFilter === "week") {
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(now.getDate() - 7);
+            return trxDate >= sevenDaysAgo;
+        } else if (currentFilter === "month") {
+            return trxDate.getFullYear() === now.getFullYear() && trxDate.getMonth() === now.getMonth();
+        }
+        return true; // 'all'
     });
+}
 
-    const { data: trxData, error: errTrx } = await supabaseClient
-        .from("transaksi")
-        .select("*");
-
-    if (errTrx) {
-        console.error(errTrx);
-        alert("Gagal memuat data transaksi!");
-        return;
-    }
-
-    const transactions = trxData || [];
+function renderReport() {
+    const filteredTrx = filterTransactions();
 
     let totalOmzet = 0;
     let totalKeuntungan = 0;
     let totalItemTerjual = 0;
-    const productSales = {};
+    let productSalesCounter = {};
 
-    transactions.forEach(trx => {
-        totalOmzet += (trx.total || 0);
-        const items = Array.isArray(trx.item) ? trx.item : [];
+    filteredTrx.forEach(trx => {
+        totalOmzet += parseFloat(trx.total || 0);
 
-        items.forEach(item => {
-            const qty = item.qty || 0;
-            const sellPrice = item.price || 0;
-            const barang = barangMap[item.id];
-            const buyPrice = barang ? (barang.harga_beli || 0) : 0;
-
+        const itemsArr = Array.isArray(trx.item) ? trx.item : [];
+        itemsArr.forEach(i => {
+            const qty = parseFloat(i.qty || 0);
             totalItemTerjual += qty;
-            totalKeuntungan += (sellPrice - buyPrice) * qty;
 
-            if (!productSales[item.name]) {
-                productSales[item.name] = 0;
-            }
-            productSales[item.name] += qty;
+            // Hitung estimasi modal
+            const hargaBeli = allProductsMap[i.id] || allProductsMap[i.name] || 0;
+            const itemRevenue = parseFloat(i.subtotal || (i.price * qty));
+            const itemProfit = itemRevenue - (hargaBeli * qty);
+
+            totalKeuntungan += itemProfit;
+
+            // Counter produk terlaris
+            const name = i.name || "Produk";
+            productSalesCounter[name] = (productSalesCounter[name] || 0) + qty;
         });
     });
 
+    // Display ringkasan
     if (reportOmzet) reportOmzet.textContent = formatRupiah(totalOmzet);
-    if (reportKeuntungan) reportKeuntungan.textContent = formatRupiah(totalKeuntungan);
-    if (reportTotalTransaksi) reportTotalTransaksi.textContent = transactions.length;
+    if (reportKeuntungan) reportKeuntungan.textContent = formatRupiah(Math.max(0, totalKeuntungan));
+    if (reportTotalTransaksi) reportTotalTransaksi.textContent = filteredTrx.length;
+    if (reportTerjual) reportTerjual.textContent = `${formatQty(totalItemTerjual)} Item`;
 
-    // Biar angka desimal dari timbangan gak bocor (floating point bug)
-    function formatQty(qty) {
-        const num = parseFloat(qty || 0);
-        return Number.isInteger(num) ? num : parseFloat(num.toFixed(2));
-    }
-
-    // Pas mau nampilin ke HTML:
-    const reportTerjual = document.getElementById("reportTerjual");
-    if (reportTerjual) {
-        reportTerjual.textContent = formatQty(totalItemTerjual);
-    }
-
+    // Display Top Produk
     if (topProductsList) {
         topProductsList.replaceChildren();
-        const sortedProducts = Object.entries(productSales)
-            .sort((a, b) => b[1] - a[1]);
+        
+        const sortedProducts = Object.entries(productSalesCounter)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5); // Ambil Top 5
 
         if (sortedProducts.length === 0) {
-            const li = document.createElement("li");
-            li.textContent = "Belum ada penjualan.";
-            topProductsList.appendChild(li);
+            topProductsList.innerHTML = `<li style="color:#888;">Belum ada penjualan di periode ini</li>`;
             return;
         }
 
         sortedProducts.forEach(([name, qty]) => {
             const li = document.createElement("li");
-            li.style.margin = "8px 0";
-            li.innerHTML = `<strong>${name}</strong>: ${qty} pcs terjual`;
+            li.style.marginBottom = "6px";
+            li.style.fontSize = "14px";
+            li.innerHTML = `<strong>${name}</strong>: ${formatQty(qty)} terjual`;
             topProductsList.appendChild(li);
         });
     }
 }
 
-loadReportData();
+function setActiveFilterBtn(activeBtn) {
+    [btnFilterToday, btnFilterWeek, btnFilterMonth, btnFilterAll].forEach(btn => {
+        if (!btn) return;
+        btn.className = "btn btn-secondary";
+        btn.style.background = "";
+        btn.style.color = "";
+        btn.style.fontWeight = "normal";
+    });
+
+    activeBtn.className = "btn";
+    activeBtn.style.background = "#D67A67";
+    activeBtn.style.color = "white";
+    activeBtn.style.fontWeight = "bold";
+}
+
+// ===================================
+// INITIALIZATION
+// ===================================
+function init() {
+    if (btnFilterToday) btnFilterToday.addEventListener("click", () => { currentFilter = "today"; setActiveFilterBtn(btnFilterToday); renderReport(); });
+    if (btnFilterWeek) btnFilterWeek.addEventListener("click", () => { currentFilter = "week"; setActiveFilterBtn(btnFilterWeek); renderReport(); });
+    if (btnFilterMonth) btnFilterMonth.addEventListener("click", () => { currentFilter = "month"; setActiveFilterBtn(btnFilterMonth); renderReport(); });
+    if (btnFilterAll) btnFilterAll.addEventListener("click", () => { currentFilter = "all"; setActiveFilterBtn(btnFilterAll); renderReport(); });
+
+    loadData();
+}
+
+init();
