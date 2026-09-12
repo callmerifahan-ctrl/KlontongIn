@@ -15,7 +15,7 @@ let items = [];
 let cart = [];
 let html5QrCode = null;
 let currentPaymentMethod = ""; 
-let selectedCategory = ""; // Default kosong -> hanya munculkan kategori
+let selectedCategory = "";
 
 // ===================================
 // DOM ELEMENTS
@@ -51,7 +51,7 @@ const btnConfirmPayment = document.getElementById("btnConfirmPayment");
 const btnClosePaymentModal = document.getElementById("btnClosePaymentModal");
 
 // ===================================
-// UTILITIES & HELPER KILOAN
+// UTILITIES & LOGIKA HARGA PAKET
 // ===================================
 function formatRupiah(angka) {
     return "Rp " + Number(angka || 0).toLocaleString("id-ID");
@@ -66,12 +66,28 @@ function isKiloan(name) {
     return lowerName.includes("telur") || lowerName.includes("beras");
 }
 
+// Logika Hitung Harga (Termasuk Paket Es Batu)
+function calculateItemSubtotal(item) {
+    const lowerName = (item.name || "").toLowerCase();
+    
+    // Khusus Es Batu: 1 pcs 3rb, 2 pcs 5rb
+    if (lowerName.includes("es batu")) {
+        const qty = Math.floor(item.qty);
+        const pairs = Math.floor(qty / 2);
+        const remainder = qty % 2;
+        return (pairs * 5000) + (remainder * 3000);
+    }
+
+    // Barang biasa / kiloan lainnya
+    return roundPrice(item.price * item.qty);
+}
+
 function getItemById(id) {
     return items.find(item => item.id === id);
 }
 
 function getCartTotal() {
-    return cart.reduce((sum, item) => sum + roundPrice(item.price * item.qty), 0);
+    return cart.reduce((sum, item) => sum + calculateItemSubtotal(item), 0);
 }
 
 // ===================================
@@ -273,9 +289,16 @@ async function processCheckout() {
     }
 
     const transactionCode = await generateTransactionCode();
+    
+    // Simpan data keranjang lengkap dengan subtotal yang sudah terhitung hematnya
+    const cartToSave = cart.map(c => ({
+        ...c,
+        subtotal: calculateItemSubtotal(c)
+    }));
+
     const newTransaction = {
         kode_transaksi: transactionCode,
-        item: cart,
+        item: cartToSave,
         total: total,
         bayar: paymentAmount,
         kembalian: changeAmount,
@@ -382,13 +405,11 @@ function renderCashierItems() {
     cashierItems.replaceChildren();
     const keyword = searchCashier ? searchCashier.value.toLowerCase().trim() : "";
 
-    // Jika search kosong dan kategori belum dipilih -> Tampilkan Grid Tombol Kategori Besar
     if (keyword === "" && selectedCategory === "") {
         renderCategoryGridDisplay();
         return;
     }
 
-    // Filter barang berdasarkan pencarian ATAU kategori yang diklik
     const filtered = items.filter(item => {
         const matchesName = (item.name || "").toLowerCase().includes(keyword) || (item.code || "").toLowerCase().includes(keyword);
         const matchesCategory = selectedCategory === "" || item.category === selectedCategory;
@@ -405,7 +426,6 @@ function renderCashierItems() {
     });
 }
 
-// Display Grid Kategori Utama jika belum ada filter
 function renderCategoryGridDisplay() {
     const grid = document.createElement("div");
     grid.style.cssText = "display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;";
@@ -459,7 +479,14 @@ function createCashierCard(item) {
     const unitText = kiloan ? " / kg" : "";
 
     const price = document.createElement("p");
-    price.textContent = `${formatRupiah(item.sellPrice)}${unitText}`;
+    
+    // Penanda Khusus jika Es Batu
+    if (item.name.toLowerCase().includes("es batu")) {
+        price.textContent = `${formatRupiah(item.sellPrice)} (2 Pcs Rp 5.000)`;
+        price.style.fontSize = "13px";
+    } else {
+        price.textContent = `${formatRupiah(item.sellPrice)}${unitText}`;
+    }
 
     const stock = document.createElement("small");
     stock.textContent = `Stok : ${item.stock}${kiloan ? " kg" : ""}`;
@@ -491,11 +518,19 @@ function createCartItem(item) {
     title.style.display = "block";
     title.textContent = item.name;
 
-    const calculatedPrice = roundPrice(item.price * item.qty);
+    // Subtotal otomatis pakai kalkulator promo
+    const calculatedPrice = calculateItemSubtotal(item);
+    
     const subtotal = document.createElement("small");
     subtotal.style.color = "#D67A67";
     subtotal.style.fontWeight = "bold";
-    subtotal.textContent = formatRupiah(calculatedPrice);
+    
+    // Beri info promo jika es batu
+    if (item.name.toLowerCase().includes("es batu") && item.qty >= 2) {
+        subtotal.textContent = `${formatRupiah(calculatedPrice)} 🏷️ (Diskon Paket)`;
+    } else {
+        subtotal.textContent = formatRupiah(calculatedPrice);
+    }
 
     infoBox.append(title, subtotal);
 
