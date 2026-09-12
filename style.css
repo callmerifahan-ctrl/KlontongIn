@@ -14,60 +14,65 @@ body {
     display: flex;
     justify-content: center;
     padding: 15px;
+    padding-bottom: 80px; /* Space untuk bottom nav di HP */
     min-height: 100vh;
 }
 
 .container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1280px;
     background: #ffffff;
-    padding: 20px;
+    padding: 15px;
     border-radius: 16px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    overflow: hidden; /* Mencegah elemen bocor keluar container */
 }
 
 /* Header & Logo */
 .header-logo img.brand-logo {
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     object-fit: contain;
 }
 
 .header-logo h1 {
     color: #D67A67;
-    margin-top: 5px;
-    font-size: 26px;
+    margin-top: 4px;
+    font-size: 24px;
 }
 
-/* Navigasi Utama */
+/* Navigasi Utama (Laptop Header / Mobile Bottom Bar) */
 .main-nav {
     display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-    scrollbar-width: none;
-}
-
-.main-nav::-webkit-scrollbar {
-    display: none;
+    justify-content: space-around;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    padding: 8px 10px;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    border-top: 1px solid #eee;
 }
 
 .nav-link {
     text-decoration: none;
-    color: #555;
-    background: #f0f0f0;
-    padding: 10px 16px;
-    border-radius: 20px;
-    font-size: 14px;
-    white-space: nowrap;
-    transition: all 0.2s;
+    color: #777;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.nav-link .nav-icon {
+    font-size: 18px;
+    margin-bottom: 2px;
 }
 
 .nav-link.active {
-    background: #D67A67;
-    color: #fff;
+    color: #D67A67;
     font-weight: bold;
 }
 
@@ -91,6 +96,20 @@ body {
     color: #333;
 }
 
+/* Modal Styling */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+}
+
 /* Toast Notification */
 .toast {
     visibility: hidden;
@@ -103,7 +122,7 @@ body {
     position: fixed;
     z-index: 2000;
     left: 50%;
-    bottom: 30px;
+    bottom: 80px;
     transform: translateX(-50%);
     font-size: 14px;
 }
@@ -115,43 +134,26 @@ body {
 
 @keyframes fadein {
     from { bottom: 0; opacity: 0; }
-    to { bottom: 30px; opacity: 1; }
+    to { bottom: 80px; opacity: 1; }
 }
 
 @keyframes fadeout {
-    from { bottom: 30px; opacity: 1; }
+    from { bottom: 80px; opacity: 1; }
     to { bottom: 0; opacity: 0; }
 }
 
-/* Dashboard Cards (Laporan) */
-.dashboard-box {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-}
-
-.dashboard-card {
-    background: #fff;
-    padding: 15px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.04);
-    border: 1px solid #eee;
-}
-
-.dashboard-card h2 {
-    color: #D67A67;
-    margin: 5px 0;
-}
-
 /* ===================================
-   LAYOUT KASIR RESPONSIF
+   LAYOUT KASIR (RESPONSIF HP & LAPTOP)
    =================================== */
 .cashier-layout {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
     width: 100%;
+}
+
+.sidebar-categories {
+    display: none; /* Sembunyikan sidebar kategori di HP */
 }
 
 .products-section {
@@ -160,13 +162,17 @@ body {
 
 .cart-section {
     width: 100%;
+    background: white;
+    padding: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    border: 1px solid #eee;
 }
 
-/* Grid Items Produk */
 .items-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 12px;
+    gap: 10px;
     margin-top: 10px;
     width: 100%;
 }
@@ -174,8 +180,8 @@ body {
 .cashier-card {
     background: #fff;
     border: 1px solid #eee;
-    padding: 12px;
-    border-radius: 10px;
+    padding: 10px;
+    border-radius: 8px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -183,7 +189,7 @@ body {
 }
 
 .cashier-card h3 {
-    font-size: 14px;
+    font-size: 13px;
     margin-bottom: 4px;
     color: #333;
 }
@@ -191,7 +197,7 @@ body {
 .cashier-card p {
     color: #D67A67;
     font-weight: bold;
-    font-size: 13px;
+    font-size: 12px;
     margin-bottom: 6px;
 }
 
@@ -212,30 +218,69 @@ body {
     font-size: 12px;
 }
 
-/* Responsif Khusus Layar Laptop (Lebar > 768px) */
+/* ===================================
+   MEDIA QUERY: LAPTOP & DESKTOP (> 768px)
+   =================================== */
 @media (min-width: 768px) {
+    body {
+        padding: 20px;
+        padding-bottom: 20px;
+    }
+
     .container {
         padding: 25px;
     }
 
+    /* Kembalikan Navbar ke Atas Header untuk Laptop */
+    .main-nav {
+        position: static;
+        box-shadow: none;
+        border-top: none;
+        justify-content: flex-start;
+        gap: 10px;
+        padding: 0;
+        margin-bottom: 20px;
+    }
+
+    .nav-link {
+        flex-direction: row;
+        gap: 6px;
+        padding: 10px 18px;
+        background: #f0f0f0;
+        border-radius: 20px;
+        font-size: 14px;
+    }
+
+    .nav-link.active {
+        background: #D67A67;
+        color: #fff;
+    }
+
+    /* Layout 3 Kolom Minimarket Kasir */
     .cashier-layout {
         flex-direction: row;
         align-items: flex-start;
     }
 
+    .sidebar-categories {
+        display: block;
+        width: 220px;
+        flex-shrink: 0;
+        background: #fafafa;
+        padding: 12px;
+        border-radius: 10px;
+        border: 1px solid #eee;
+    }
+
     .products-section {
         flex: 1;
-        min-width: 0; /* Menjaga flex item tidak melebar melebihi batas */
+        min-width: 0;
     }
 
     .cart-section {
-        width: 320px; /* Ukuran tetap untuk sidebar keranjang */
+        width: 320px;
         flex-shrink: 0;
         position: sticky;
         top: 20px;
-    }
-
-    .dashboard-box {
-        grid-template-columns: repeat(4, 1fr);
     }
 }

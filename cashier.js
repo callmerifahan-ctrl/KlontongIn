@@ -18,6 +18,18 @@ let currentPaymentMethod = "";
 let selectedCategory = "";
 let lastSavedTransaction = null;
 
+const categoriesList = [
+    { label: "🌾 Sembako & Beras", value: "Sembako", color: "#fff3cd" },
+    { label: "🍜 Mie Instan", value: "Mie Instan", color: "#d1ecf1" },
+    { label: "🥤 Minuman & Galon", value: "Minuman", color: "#d4edda" },
+    { label: "🍿 Snack & Jajanan", value: "Snack", color: "#f8d7da" },
+    { label: "🚬 Rokok & Tembakau", value: "Rokok", color: "#e2e3e5" },
+    { label: "🧼 Perlengkapan Mandi", value: "Perlengkapan", color: "#e0f7fa" },
+    { label: "🍦 Es Krim & Pendingin", value: "Pendingin", color: "#fff8e1" },
+    { label: "💊 Obat & Health", value: "Obat", color: "#f3e5f5" },
+    { label: "🔥 Gas & Rumah Tangga", value: "Rumah Tangga", color: "#fbe9e7" }
+];
+
 // ===================================
 // DOM ELEMENTS
 // ===================================
@@ -26,6 +38,7 @@ const cartItems = document.getElementById("cartItems");
 const cartTotal = document.getElementById("cartTotal");
 const checkoutButton = document.getElementById("checkoutButton");
 const searchCashier = document.getElementById("searchCashier");
+const desktopCategoryList = document.getElementById("desktopCategoryList");
 
 const btnScanCashier = document.getElementById("btnScanCashier");
 const btnCloseScanner = document.getElementById("btnCloseScanner");
@@ -51,7 +64,6 @@ const debtRemainingTotal = document.getElementById("debtRemainingTotal");
 const btnConfirmPayment = document.getElementById("btnConfirmPayment");
 const btnClosePaymentModal = document.getElementById("btnClosePaymentModal");
 
-// Modal Struk Elements
 const receiptSuccessModal = document.getElementById("receiptSuccessModal");
 const receiptTrxCodeText = document.getElementById("receiptTrxCodeText");
 const btnPrintReceiptBtn = document.getElementById("btnPrintReceiptBtn");
@@ -59,7 +71,7 @@ const btnCloseReceiptSuccessModal = document.getElementById("btnCloseReceiptSucc
 const receiptPrintArea = document.getElementById("receiptPrintArea");
 
 // ===================================
-// UTILITIES & LOGIKA HARGA PAKET
+// UTILITIES & HARGA PAKET
 // ===================================
 function formatRupiah(angka) {
     return "Rp " + Number(angka || 0).toLocaleString("id-ID");
@@ -76,14 +88,12 @@ function isKiloan(name) {
 
 function calculateItemSubtotal(item) {
     const lowerName = (item.name || "").toLowerCase();
-    
     if (lowerName.includes("es batu")) {
         const qty = Math.floor(item.qty);
         const pairs = Math.floor(qty / 2);
         const remainder = qty % 2;
         return (pairs * 5000) + (remainder * 3000);
     }
-
     return roundPrice(item.price * item.qty);
 }
 
@@ -125,11 +135,7 @@ async function generateTransactionCode() {
         .from("transaksi")
         .select("*", { count: "exact", head: true });
 
-    if (error) {
-        console.error(error);
-        return "TRX-" + Date.now();
-    }
-
+    if (error) return "TRX-" + Date.now();
     return "TRX-" + String((count || 0) + 1).padStart(6, "0");
 }
 
@@ -143,22 +149,12 @@ function addToCart(itemId) {
     const existingItem = cart.find(item => item.id === itemId);
 
     if (existingItem) {
-        if (existingItem.qty >= inventoryItem.stock) {
-            return alert("Stok tidak mencukupi!");
-        }
+        if (existingItem.qty >= inventoryItem.stock) return alert("Stok tidak mencukupi!");
         existingItem.qty = parseFloat((existingItem.qty + 1).toFixed(3));
     } else {
-        if (inventoryItem.stock <= 0) {
-            return alert("Barang habis!");
-        }
-        cart.push({
-            id: inventoryItem.id,
-            name: inventoryItem.name,
-            price: inventoryItem.sellPrice,
-            qty: 1
-        });
+        if (inventoryItem.stock <= 0) return alert("Barang habis!");
+        cart.push({ id: inventoryItem.id, name: inventoryItem.name, price: inventoryItem.sellPrice, qty: 1 });
     }
-
     renderCart();
 }
 
@@ -179,7 +175,6 @@ function updateCartQtyDirect(itemId, newQty) {
             cartItem.qty = parsedQty;
         }
     }
-
     renderCart();
 }
 
@@ -189,7 +184,7 @@ function clearCart() {
 }
 
 // ===================================
-// MODAL PAYMENT HANDLERS
+// MODAL & PAYMENT HANDLERS
 // ===================================
 function openPaymentModal() {
     if (cart.length === 0) return alert("Keranjang masih kosong!");
@@ -244,9 +239,6 @@ function updateDebtRemaining() {
     debtRemainingTotal.textContent = formatRupiah(Math.max(0, remaining));
 }
 
-// ===================================
-// CHECKOUT EXECUTION & PRINT STRUK
-// ===================================
 async function processCheckout() {
     if (cart.length === 0) return alert("Keranjang masih kosong!");
     if (!currentPaymentMethod) return alert("Pilih metode pembayaran terlebih dahulu!");
@@ -264,7 +256,7 @@ async function processCheckout() {
         changeAmount = paymentAmount - total;
     } else if (currentPaymentMethod === "Bon") {
         customerName = debtCustomerName.value.trim();
-        if (!customerName) return alert("Masukkan nama pelanggan / tetangga yang berutang!");
+        if (!customerName) return alert("Masukkan nama pelanggan!");
 
         const dp = parseInt(debtDPInput.value, 10) || 0;
         paymentAmount = dp;
@@ -278,27 +270,11 @@ async function processCheckout() {
     for (const cartItem of cart) {
         const item = getItemById(cartItem.id);
         const newStock = parseFloat((item.stock - cartItem.qty).toFixed(3));
-
-        const { error: stockError } = await supabaseClient
-            .from("barang")
-            .update({ stok: newStock })
-            .eq("id", item.id);
-
-        if (stockError) {
-            console.error(stockError);
-            alert("Gagal mengurangi stok barang: " + item.name);
-            btnConfirmPayment.disabled = false;
-            btnConfirmPayment.textContent = "✅ Simpan Transaksi";
-            return;
-        }
+        await supabaseClient.from("barang").update({ stok: newStock }).eq("id", item.id);
     }
 
     const transactionCode = await generateTransactionCode();
-    
-    const cartToSave = cart.map(c => ({
-        ...c,
-        subtotal: calculateItemSubtotal(c)
-    }));
+    const cartToSave = cart.map(c => ({ ...c, subtotal: calculateItemSubtotal(c) }));
 
     const newTransaction = {
         kode_transaksi: transactionCode,
@@ -313,29 +289,17 @@ async function processCheckout() {
         tanggal: new Date().toISOString()
     };
 
-    const { error: transactionError } = await supabaseClient
-        .from("transaksi")
-        .insert([newTransaction]);
-
-    if (transactionError) {
-        console.error(transactionError);
-        alert("Gagal menyimpan transaksi!");
-        btnConfirmPayment.disabled = false;
-        btnConfirmPayment.textContent = "✅ Simpan Transaksi";
-        return;
-    }
+    await supabaseClient.from("transaksi").insert([newTransaction]);
 
     if (isDebt && debtRemaining > 0) {
-        await supabaseClient
-            .from("riwayat_bon")
-            .insert([{
-                nama_pelanggan: customerName,
-                kode_transaksi: transactionCode,
-                tipe: "UTANG_BARU",
-                nominal: debtRemaining,
-                keterangan: `Bon Transaksi ${transactionCode}`,
-                tanggal: new Date().toISOString()
-            }]);
+        await supabaseClient.from("riwayat_bon").insert([{
+            nama_pelanggan: customerName,
+            kode_transaksi: transactionCode,
+            tipe: "UTANG_BARU",
+            nominal: debtRemaining,
+            keterangan: `Bon Transaksi ${transactionCode}`,
+            tanggal: new Date().toISOString()
+        }]);
     }
 
     btnConfirmPayment.disabled = false;
@@ -363,9 +327,7 @@ function printReceipt() {
     let itemsHTML = "";
     trx.item.forEach(i => {
         itemsHTML += `
-            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
-                <span>${i.name}</span>
-            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:2px;"><span>${i.name}</span></div>
             <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:10px;">
                 <span>${i.qty} x ${formatRupiah(i.price)}</span>
                 <span>${formatRupiah(i.subtotal)}</span>
@@ -388,29 +350,12 @@ function printReceipt() {
         <div style="border-bottom:1px dashed #000; margin-bottom:6px;"></div>
         ${itemsHTML}
         <div style="border-bottom:1px dashed #000; margin-bottom:6px;"></div>
-        <div style="display:flex; justify-content:space-between; font-weight:bold;">
-            <span>TOTAL:</span>
-            <span>${formatRupiah(trx.total)}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between;">
-            <span>BAYAR:</span>
-            <span>${formatRupiah(trx.bayar)}</span>
-        </div>
-        <div style="display:flex; justify-content:space-between;">
-            <span>KEMBALI:</span>
-            <span>${formatRupiah(trx.kembalian)}</span>
-        </div>
-        ${trx.sisa_utang > 0 ? `
-            <div style="display:flex; justify-content:space-between; font-weight:bold; color:red;">
-                <span>SISA UTANG:</span>
-                <span>${formatRupiah(trx.sisa_utang)}</span>
-            </div>
-        ` : ''}
+        <div style="display:flex; justify-content:space-between; font-weight:bold;"><span>TOTAL:</span><span>${formatRupiah(trx.total)}</span></div>
+        <div style="display:flex; justify-content:space-between;"><span>BAYAR:</span><span>${formatRupiah(trx.bayar)}</span></div>
+        <div style="display:flex; justify-content:space-between;"><span>KEMBALI:</span><span>${formatRupiah(trx.kembalian)}</span></div>
+        ${trx.sisa_utang > 0 ? `<div style="display:flex; justify-content:space-between; font-weight:bold; color:red;"><span>SISA UTANG:</span><span>${formatRupiah(trx.sisa_utang)}</span></div>` : ''}
         <div style="border-bottom:1px dashed #000; margin-top:6px; margin-bottom:8px;"></div>
-        <div style="text-align:center; font-size:10px;">
-            <p style="margin:0;">Terima kasih atas kunjungannya!</p>
-            <p style="margin:2px 0 0 0;">Barang yang dibeli tidak dapat ditukar.</p>
-        </div>
+        <div style="text-align:center; font-size:10px;"><p style="margin:0;">Terima kasih atas kunjungannya!</p></div>
     `;
 
     receiptPrintArea.style.display = "block";
@@ -419,8 +364,46 @@ function printReceipt() {
 }
 
 // ===================================
-// RENDERERS & CATEGORY-FIRST DISPLAY
+// RENDERERS (RESPONSIF KATEGORI)
 // ===================================
+function renderDesktopSidebar() {
+    if (!desktopCategoryList) return;
+    desktopCategoryList.replaceChildren();
+
+    const btnAll = document.createElement("button");
+    btnAll.textContent = "📋 Semua Produk";
+    btnAll.style.cssText = `
+        padding: 10px; border-radius: 6px; border: 1px solid #ccc; text-align: left;
+        cursor: pointer; font-weight: bold; background: ${selectedCategory === "" ? "#D67A67" : "#fff"};
+        color: ${selectedCategory === "" ? "#fff" : "#333"};
+    `;
+    btnAll.addEventListener("click", () => {
+        selectedCategory = "";
+        renderDesktopSidebar();
+        renderCategoryFilter();
+        renderCashierItems();
+    });
+    desktopCategoryList.appendChild(btnAll);
+
+    categoriesList.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.textContent = cat.label;
+        btn.style.cssText = `
+            padding: 10px; border-radius: 6px; border: 1px solid #ccc; text-align: left;
+            cursor: pointer; font-size: 13px; background: ${selectedCategory === cat.value ? "#D67A67" : "#fff"};
+            color: ${selectedCategory === cat.value ? "#fff" : "#333"};
+            font-weight: ${selectedCategory === cat.value ? "bold" : "normal"};
+        `;
+        btn.addEventListener("click", () => {
+            selectedCategory = cat.value;
+            renderDesktopSidebar();
+            renderCategoryFilter();
+            renderCashierItems();
+        });
+        desktopCategoryList.appendChild(btn);
+    });
+}
+
 function renderCategoryFilter() {
     let filterContainer = document.getElementById("cashierCategoryFilter");
     
@@ -433,31 +416,15 @@ function renderCategoryFilter() {
 
     if (!filterContainer) return;
 
-    const categories = [
-        { label: "🌾 Sembako", value: "Sembako" },
-        { label: "🍜 Mie Instan", value: "Mie Instan" },
-        { label: "🥤 Minuman", value: "Minuman" },
-        { label: "🍿 Snack", value: "Snack" },
-        { label: "🚬 Rokok", value: "Rokok" },
-        { label: "🧼 Cuci/Mandi", value: "Perlengkapan" },
-        { label: "🍦 Es Krim", value: "Pendingin" },
-        { label: "💊 Obat", value: "Obat" },
-        { label: "🔥 Gas/Rumah", value: "Rumah Tangga" }
-    ];
-
     filterContainer.replaceChildren();
 
-    categories.forEach(cat => {
+    categoriesList.forEach(cat => {
         const btn = document.createElement("button");
         btn.type = "button";
         btn.textContent = cat.label;
         btn.style.cssText = `
-            padding: 8px 14px;
-            font-size: 13px;
-            border-radius: 16px;
-            border: 1px solid #ccc;
-            white-space: nowrap;
-            cursor: pointer;
+            padding: 8px 14px; font-size: 13px; border-radius: 16px; border: 1px solid #ccc;
+            white-space: nowrap; cursor: pointer;
             background: ${selectedCategory === cat.value ? "#D67A67" : "#fff"};
             color: ${selectedCategory === cat.value ? "#fff" : "#333"};
             font-weight: ${selectedCategory === cat.value ? "bold" : "normal"};
@@ -466,6 +433,7 @@ function renderCategoryFilter() {
         btn.addEventListener("click", () => {
             selectedCategory = (selectedCategory === cat.value) ? "" : cat.value;
             renderCategoryFilter();
+            renderDesktopSidebar();
             renderCashierItems();
         });
 
@@ -498,45 +466,23 @@ function renderCashierItems() {
     });
 }
 
-// Display Grid Kategori Utama (Responsif HP & Laptop)
 function renderCategoryGridDisplay() {
     const grid = document.createElement("div");
-    grid.style.cssText = "display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; width: 100%;";
+    grid.style.cssText = "display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; width: 100%;";
 
-    const categories = [
-        { label: "🌾 Sembako & Beras", value: "Sembako", color: "#fff3cd" },
-        { label: "🍜 Mie Instan", value: "Mie Instan", color: "#d1ecf1" },
-        { label: "🥤 Minuman & Galon", value: "Minuman", color: "#d4edda" },
-        { label: "🍿 Snack & Jajanan", value: "Snack", color: "#f8d7da" },
-        { label: "🚬 Rokok & Tembakau", value: "Rokok", color: "#e2e3e5" },
-        { label: "🧼 Perlengkapan Mandi", value: "Perlengkapan", color: "#e0f7fa" },
-        { label: "🍦 Es Krim & Pendingin", value: "Pendingin", color: "#fff8e1" },
-        { label: "💊 Obat & Health", value: "Obat", color: "#f3e5f5" },
-        { label: "🔥 Gas & Rumah Tangga", value: "Rumah Tangga", color: "#fbe9e7" }
-    ];
-
-    categories.forEach(cat => {
+    categoriesList.forEach(cat => {
         const card = document.createElement("div");
         card.style.cssText = `
-            background: ${cat.color};
-            padding: 15px 10px;
-            border-radius: 10px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 13px;
-            color: #333;
-            cursor: pointer;
-            border: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 70px;
+            background: ${cat.color}; padding: 15px 10px; border-radius: 10px;
+            text-align: center; font-weight: bold; font-size: 13px; color: #333;
+            cursor: pointer; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex; align-items: center; justify-content: center; min-height: 65px;
         `;
         card.textContent = cat.label;
         card.addEventListener("click", () => {
             selectedCategory = cat.value;
             renderCategoryFilter();
+            renderDesktopSidebar();
             renderCashierItems();
         });
         grid.appendChild(card);
@@ -556,10 +502,9 @@ function createCashierCard(item) {
     const unitText = kiloan ? " / kg" : "";
 
     const price = document.createElement("p");
-    
     if (item.name.toLowerCase().includes("es batu")) {
         price.textContent = `${formatRupiah(item.sellPrice)} (2 Pcs Rp 5.000)`;
-        price.style.fontSize = "13px";
+        price.style.fontSize = "12px";
     } else {
         price.textContent = `${formatRupiah(item.sellPrice)}${unitText}`;
     }
@@ -618,7 +563,7 @@ function createCartItem(item) {
     qtyInput.step = kiloan ? "0.01" : "1";
     qtyInput.min = "0";
     qtyInput.value = item.qty;
-    qtyInput.style.cssText = "width: 65px; padding: 4px; text-align: center; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;";
+    qtyInput.style.cssText = "width: 60px; padding: 4px; text-align: center; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;";
     qtyInput.addEventListener("change", (e) => updateCartQtyDirect(item.id, e.target.value));
 
     controls.append(qtyInput);
@@ -646,7 +591,7 @@ function createCartItem(item) {
 // BARCODE SCANNER
 // ===================================
 function openScanner() {
-    scannerModal.classList.add("show");
+    scannerModal.style.display = "flex";
     html5QrCode = new Html5Qrcode("scannerReader");
     
     const config = { fps: 15, qrbox: { width: 280, height: 120 } };
@@ -679,7 +624,7 @@ function closeScanner() {
         html5QrCode.stop().then(() => html5QrCode.clear()).catch(() => {});
         html5QrCode = null;
     }
-    scannerModal.classList.remove("show");
+    scannerModal.style.display = "none";
 }
 
 // ===================================
@@ -708,6 +653,7 @@ function setupEventListeners() {
 
 async function init() {
     await loadDataSupabase();
+    renderDesktopSidebar();
     renderCategoryFilter();
     renderCashierItems();
     renderCart();

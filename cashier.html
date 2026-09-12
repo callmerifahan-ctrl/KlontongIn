@@ -20,23 +20,13 @@
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <style>
-        /* CSS Khusus Format Cetak Struk Thermal 58mm */
         @media print {
-            body * {
-                visibility: hidden;
-            }
-            #receiptPrintArea, #receiptPrintArea * {
-                visibility: visible;
-            }
+            body * { visibility: hidden; }
+            #receiptPrintArea, #receiptPrintArea * { visibility: visible; }
             #receiptPrintArea {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 58mm;
+                position: absolute; left: 0; top: 0; width: 58mm;
                 font-family: 'Courier New', Courier, monospace;
-                font-size: 11px;
-                color: #000;
-                padding: 5px;
+                font-size: 11px; color: #000; padding: 5px;
             }
         }
     </style>
@@ -44,22 +34,29 @@
 <body>
     <div class="container">
         <!-- Header Logo -->
-        <div class="header-logo" style="text-align: center; margin-bottom: 20px;">
+        <div class="header-logo" style="text-align: center; margin-bottom: 15px;">
             <img src="image/logo-warungku.png" alt="KlontongIn Logo" class="brand-logo">
             <h1>KlontongIn</h1>
         </div>
 
+        <!-- Navigasi Utama (Bottom Nav di HP, Top Bar di Laptop) -->
         <nav class="main-nav">
-            <a href="index.html" class="nav-link">📦 Inventori</a>
-            <a href="cashier.html" class="nav-link active">🛒 Kasir</a>
-            <a href="debts.html" class="nav-link">📝 Bon / Utang</a>
-            <a href="history.html" class="nav-link">📋 Riwayat Transaksi</a>
-            <a href="report.html" class="nav-link">📊 Laporan</a>
+            <a href="index.html" class="nav-link"><span class="nav-icon">📦</span><span>Inventori</span></a>
+            <a href="cashier.html" class="nav-link active"><span class="nav-icon">🛒</span><span>Kasir</span></a>
+            <a href="debts.html" class="nav-link"><span class="nav-icon">📝</span><span>Bon/Utang</span></a>
+            <a href="history.html" class="nav-link"><span class="nav-icon">📋</span><span>Riwayat</span></a>
+            <a href="report.html" class="nav-link"><span class="nav-icon">📊</span><span>Laporan</span></a>
         </nav>
 
-        <!-- Area Kasir Main -->
+        <!-- Area Kasir Main (Layout 3 Kolom Laptop / Stacked Mobile) -->
         <div class="cashier-layout">
-            <!-- Kolom Kiri: Produk & Kategori -->
+            <!-- Kolom 1: Sidebar Kategori (Tampil di Laptop) -->
+            <div class="sidebar-categories">
+                <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 15px; border-bottom: 2px solid #D67A67; padding-bottom: 6px;">📂 Kategori</h3>
+                <div id="desktopCategoryList" style="display: flex; flex-direction: column; gap: 6px;"></div>
+            </div>
+
+            <!-- Kolom 2: Pencarian & Grid Produk -->
             <div class="products-section">
                 <div style="display: flex; gap: 8px; margin-bottom: 10px; width: 100%;">
                     <input type="text" id="searchCashier" placeholder="🔍 Cari barang / scan barcode..." style="flex: 1; min-width: 0; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
@@ -69,9 +66,9 @@
                 <div id="cashierItems" class="items-grid"></div>
             </div>
 
-            <!-- Kolom Kanan: Keranjang Belanja -->
-            <div class="cart-section" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #eee;">
-                <h2 style="margin-top: 0;">🛒 Keranjang Belanja</h2>
+            <!-- Kolom 3: Keranjang Belanja -->
+            <div class="cart-section">
+                <h2 style="margin-top: 0; font-size: 18px;">🛒 Keranjang Belanja</h2>
                 <ul id="cartItems" style="list-style: none; padding: 0; margin: 0 0 15px 0;"></ul>
 
                 <div style="border-top: 2px dashed #eee; padding-top: 10px; margin-bottom: 15px; display: flex; justify-content: space-between; font-size: 18px; font-weight: bold;">
@@ -86,8 +83,8 @@
         </div>
     </div>
 
-    <!-- Modal Barcode Scanner -->
-    <div id="scannerModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center;">
+    <!-- Modal Scanner Barcode -->
+    <div id="scannerModal" class="modal">
         <div style="background: white; padding: 15px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center;">
             <h3>Scan Barcode Produk</h3>
             <div id="scannerReader" style="width: 100%; min-height: 200px;"></div>
@@ -96,7 +93,7 @@
     </div>
 
     <!-- Modal Pembayaran -->
-    <div id="paymentModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+    <div id="paymentModal" class="modal">
         <div style="background: white; padding: 20px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
             <h3 style="margin-top: 0;">Pilih Metode Pembayaran</h3>
             <p style="color: #666; font-size: 14px; margin-bottom: 5px;">Total Belanja:</p>
@@ -136,8 +133,8 @@
         </div>
     </div>
 
-    <!-- Modal Struk Sukses & Cetak Bluetooth -->
-    <div id="receiptSuccessModal" class="modal" style="display: none; position: fixed; z-index: 1100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center;">
+    <!-- Modal Struk Sukses -->
+    <div id="receiptSuccessModal" class="modal" style="z-index: 1100;">
         <div style="background: white; padding: 20px; border-radius: 12px; max-width: 380px; width: 90%; text-align: center;">
             <h2 style="color: #27ae60; margin-top: 0;">🎉 Transaksi Berhasil!</h2>
             <p id="receiptTrxCodeText" style="font-weight: bold; color: #555; margin-bottom: 15px;"></p>
@@ -157,6 +154,6 @@
     <div id="receiptPrintArea" style="display: none;"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
-    <script src="cashier.js?v=12.0"></script>
+    <script src="cashier.js?v=13.0"></script>
 </body>
 </html>
