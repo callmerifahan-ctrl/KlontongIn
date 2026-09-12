@@ -9,21 +9,21 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, 
 });
 
 // ===================================
-// STATE & DOM ELEMENTS
+// DOM ELEMENTS & STATE
 // ===================================
-let debtTransactions = [];
-let selectedTransaction = null;
+let debtSummaryList = []; // Grouped by nama_pelanggan
+let selectedCustomer = null;
 
 const debtList = document.getElementById("debtList");
-const totalDebtAmount = document.getElementById("totalDebtAmount");
 const searchDebt = document.getElementById("searchDebt");
+const totalAllDebt = document.getElementById("totalAllDebt");
 
-const payModal = document.getElementById("payModal");
-const modalCustomerInfo = document.getElementById("modalCustomerInfo");
-const modalRemainingInfo = document.getElementById("modalRemainingInfo");
-const payAmountInput = document.getElementById("payAmountInput");
+const payDebtModal = document.getElementById("payDebtModal");
+const modalCustomerName = document.getElementById("modalCustomerName");
+const modalCurrentDebt = document.getElementById("modalCurrentDebt");
+const modalPayAmount = document.getElementById("modalPayAmount");
 const btnConfirmPayDebt = document.getElementById("btnConfirmPayDebt");
-const btnClosePayModal = document.getElementById("btnClosePayModal");
+const btnClosePayDebtModal = document.getElementById("btnClosePayDebtModal");
 
 // ===================================
 // UTILITIES
@@ -32,15 +32,11 @@ function formatRupiah(angka) {
     return "Rp " + Number(angka || 0).toLocaleString("id-ID");
 }
 
-function formatDate(isoString) {
-    const d = new Date(isoString);
-    return d.toLocaleDateString("id-ID", { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
 // ===================================
-// DATABASE OPERATIONS
+// DATA LOADERS & CALCULATOR
 // ===================================
-async function loadDebts() {
+async function loadDebtData() {
+    // Ambil transaksi yang status_bon = true & sisa_utang > 0
     const { data, error } = await supabaseClient
         .from("transaksi")
         .select("*")
@@ -49,171 +45,177 @@ async function loadDebts() {
         .order("tanggal", { ascending: false });
 
     if (error) {
-        console.error(error);
-        alert("Gagal mengambil data utang!");
+        console.error("Gagal memuat bon:", error);
         return;
     }
 
-    debtTransactions = data || [];
-    renderDebts();
+    const rawTransactions = data || [];
+
+    // Grouping utang berdasarkan nama pelanggan
+    const grouped = {};
+    let grandTotalDebt = 0;
+
+    rawTransactions.forEach(trx => {
+        const name = (trx.nama_pelanggan || "Tanpa Nama").trim();
+        const sisa = parseFloat(trx.sisa_utang || 0);
+
+        grandTotalDebt += sisa;
+
+        if (!grouped[name]) {
+            grouped[name] = {
+                nama: name,
+                totalUtang: 0,
+                transactions: []
+            };
+        }
+
+        grouped[name].totalUtang += sisa;
+        grouped[name].transactions.push(trx);
+    });
+
+    debtSummaryList = Object.values(grouped);
+
+    if (totalAllDebt) {
+        totalAllDebt.textContent = formatRupiah(grandTotalDebt);
+    }
+
+    renderDebtList();
 }
 
 // ===================================
 // RENDERERS
 // ===================================
-function renderDebts() {
+function renderDebtList() {
+    if (!debtList) return;
     debtList.replaceChildren();
+
     const keyword = searchDebt ? searchDebt.value.toLowerCase().trim() : "";
-
-    const filtered = debtTransactions.filter(t => 
-        (t.nama_pelanggan || "").toLowerCase().includes(keyword) ||
-        (t.kode_transaksi || "").toLowerCase().includes(keyword)
-    );
-
-    const grandTotal = filtered.reduce((sum, t) => sum + (t.sisa_utang || 0), 0);
-    totalDebtAmount.textContent = formatRupiah(grandTotal);
+    const filtered = debtSummaryList.filter(item => item.nama.toLowerCase().includes(keyword));
 
     if (filtered.length === 0) {
-        debtList.innerHTML = `<p style="text-align:center; color:#888; padding: 20px;">Tidak ada catatan utang / bon aktif 🎉</p>`;
+        debtList.innerHTML = `<p style="text-align:center; color:#888; padding: 20px;">Tidak ada catatan bon utang aktif 👍</p>`;
         return;
     }
 
-    filtered.forEach(t => {
-        debtList.appendChild(createDebtCard(t));
+    filtered.forEach(customer => {
+        const card = document.createElement("div");
+        card.style.cssText = "background: #fff; padding: 14px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #e74c3c;";
+
+        const topRow = document.createElement("div");
+        topRow.style.cssText = "display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;";
+
+        const nameTitle = document.createElement("h3");
+        nameTitle.style.margin = "0";
+        nameTitle.textContent = `👤 ${customer.nama}`;
+
+        const amountTag = document.createElement("span");
+        amountTag.style.cssText = "font-weight: bold; color: #e74c3c; font-size: 16px;";
+        amountTag.textContent = formatRupiah(customer.totalUtang);
+
+        topRow.append(nameTitle, amountTag);
+
+        const detailText = document.createElement("small");
+        detailText.style.cssText = "display: block; color: #666; margin-bottom: 12px;";
+        detailText.textContent = `Terdiri dari ${customer.transactions.length} transaksi bon belum lunas`;
+
+        const btnPay = document.createElement("button");
+        btnPay.className = "btn";
+        btnPay.style.cssText = "width: 100%; background: #27ae60; color: white; font-weight: bold; padding: 8px;";
+        btnPay.textContent = "💳 Bayar / Cicil Utang";
+        btnPay.addEventListener("click", () => openPayModal(customer));
+
+        card.append(topRow, detailText, btnPay);
+        debtList.appendChild(card);
     });
 }
 
-function createDebtCard(t) {
-    const card = document.createElement("div");
-    card.style.background = "#fff";
-    card.style.padding = "14px";
-    card.style.borderRadius = "8px";
-    card.style.marginBottom = "12px";
-    card.style.boxShadow = "0 2px 4px rgba(0,0,0,0.05)";
-    card.style.borderLeft = "5px solid #e67e22";
-
-    const header = document.createElement("div");
-    header.style.display = "flex";
-    header.style.justifyContent = "space-between";
-    header.style.alignItems = "center";
-
-    const name = document.createElement("h3");
-    name.style.margin = "0";
-    name.textContent = t.nama_pelanggan || "Pelanggan Tanpa Nama";
-
-    const remaining = document.createElement("span");
-    remaining.style.fontWeight = "bold";
-    remaining.style.color = "#d32f2f";
-    remaining.style.fontSize = "16px";
-    remaining.textContent = formatRupiah(t.sisa_utang);
-
-    header.append(name, remaining);
-
-    const dateInfo = document.createElement("small");
-    dateInfo.style.color = "#888";
-    dateInfo.style.display = "block";
-    dateInfo.style.marginTop = "4px";
-    dateInfo.textContent = `${t.kode_transaksi} • ${formatDate(t.tanggal)}`;
-
-    // Rincian Barang
-    const itemsSummary = document.createElement("p");
-    itemsSummary.style.margin = "8px 0";
-    itemsSummary.style.fontSize = "13px";
-    itemsSummary.style.color = "#555";
-    const itemNames = (t.item || []).map(i => `${i.name} (${i.qty})`).join(", ");
-    itemsSummary.textContent = `Barang: ${itemNames}`;
-
-    // Tombol Aksi
-    const actionBox = document.createElement("div");
-    actionBox.style.display = "flex";
-    actionBox.style.gap = "8px";
-    actionBox.style.marginTop = "10px";
-
-    const btnPay = document.createElement("button");
-    btnPay.className = "btn btn-success";
-    btnPay.style.flex = "1";
-    btnPay.style.padding = "8px";
-    btnPay.style.fontSize = "13px";
-    btnPay.textContent = "💵 Bayar / Cicil";
-    btnPay.addEventListener("click", () => openPayModal(t));
-
-    const btnWA = document.createElement("button");
-    btnWA.className = "btn";
-    btnWA.style.background = "#25D366";
-    btnWA.style.color = "#fff";
-    btnWA.style.padding = "8px";
-    btnWA.style.fontSize = "13px";
-    btnWA.textContent = "📲 Kirim WA";
-    btnWA.addEventListener("click", () => sendWA(t));
-
-    actionBox.append(btnPay, btnWA);
-    card.append(header, dateInfo, itemsSummary, actionBox);
-
-    return card;
+// ===================================
+// PAYMENT MODAL HANDLERS & LOGIC
+// ===================================
+function openPayModal(customer) {
+    selectedCustomer = customer;
+    modalCustomerName.textContent = customer.nama;
+    modalCurrentDebt.value = formatRupiah(customer.totalUtang);
+    modalPayAmount.value = "";
+    payDebtModal.style.display = "flex";
 }
 
-// ===================================
-// HANDLERS
-// ===================================
-function openPayModal(transaction) {
-    selectedTransaction = transaction;
-    modalCustomerInfo.textContent = `Pelanggan: ${transaction.nama_pelanggan}`;
-    modalRemainingInfo.textContent = `Sisa Utang: ${formatRupiah(transaction.sisa_utang)}`;
-    payAmountInput.value = transaction.sisa_utang; // Default diisi lunas
-    payModal.style.display = "flex";
+function closePayModal() {
+    payDebtModal.style.display = "none";
+    selectedCustomer = null;
 }
 
 async function processPayDebt() {
-    if (!selectedTransaction) return;
+    if (!selectedCustomer) return;
 
-    const payInput = parseInt(payAmountInput.value, 10) || 0;
-    if (payInput <= 0) return alert("Masukkan nominal pembayaran yang valid!");
-
-    const newRemaining = selectedTransaction.sisa_utang - payInput;
-    const newBayarTotal = (selectedTransaction.bayar || 0) + payInput;
-    const isLunas = newRemaining <= 0;
-
-    btnConfirmPayDebt.disabled = true;
-
-    const { error } = await supabaseClient
-        .from("transaksi")
-        .update({
-            bayar: newBayarTotal,
-            sisa_utang: Math.max(0, newRemaining),
-            status_bon: !isLunas
-        })
-        .eq("id", selectedTransaction.id);
-
-    btnConfirmPayDebt.disabled = false;
-
-    if (error) {
-        console.error(error);
-        alert("Gagal memproses pembayaran utang!");
-        return;
+    const payAmount = parseInt(modalPayAmount.value, 10);
+    if (isNaN(payAmount) || payAmount <= 0) {
+        return alert("Masukkan nominal pembayaran yang valid!");
     }
 
-    payModal.style.display = "none";
-    alert(isLunas ? "🎉 Bon telah LUNAS!" : `✅ Pembayaran dicatat. Sisa utang: ${formatRupiah(newRemaining)}`);
-    await loadDebts();
-}
+    btnConfirmPayDebt.disabled = true;
+    btnConfirmPayDebt.textContent = "Memproses...";
 
-function sendWA(t) {
-    const itemNames = (t.item || []).map(i => `- ${i.name} (${i.qty}x)`).join("\n");
-    const pesan = `Halo kak ${t.nama_pelanggan}, sekadar menginfokan catatan bon di Warung Ibu Irma:\n\n*Rincian Belanja (${t.kode_transaksi}):*\n${itemNames}\n\n*Total Belanja:* ${formatRupiah(t.total)}\n*Sisa Utang:* ${formatRupiah(t.sisa_utang)}\n\nTerima kasih banyak ya Kak! 🙏`;
-    
-    const encoded = encodeURIComponent(pesan);
-    window.open(`https://wa.me/?text=${encoded}`, '_blank');
+    let remainingPayment = payAmount;
+
+    // Kurangi utang transaksi dari yang paling lama (FIFO)
+    for (const trx of selectedCustomer.transactions) {
+        if (remainingPayment <= 0) break;
+
+        const currentSisa = parseFloat(trx.sisa_utang || 0);
+        let deduct = 0;
+
+        if (remainingPayment >= currentSisa) {
+            deduct = currentSisa;
+            remainingPayment -= currentSisa;
+
+            // Update transaksi ini LUNAS
+            await supabaseClient
+                .from("transaksi")
+                .update({ sisa_utang: 0, status_bon: false })
+                .eq("id", trx.id);
+        } else {
+            deduct = remainingPayment;
+            const newSisa = currentSisa - remainingPayment;
+            remainingPayment = 0;
+
+            // Update sisa utang transaksi
+            await supabaseClient
+                .from("transaksi")
+                .update({ sisa_utang: newSisa })
+                .eq("id", trx.id);
+        }
+
+        // Catat di riwayat_bon
+        await supabaseClient
+            .from("riwayat_bon")
+            .insert([{
+                nama_pelanggan: selectedCustomer.nama,
+                kode_transaksi: trx.kode_transaksi,
+                tipe: "PELUNASAN",
+                nominal: deduct,
+                keterangan: `Bayar/Cicil Bon Rp ${deduct.toLocaleString("id-ID")}`,
+                tanggal: new Date().toISOString()
+            }]);
+    }
+
+    btnConfirmPayDebt.disabled = false;
+    btnConfirmPayDebt.textContent = "✅ Simpan Pembayaran";
+    closePayModal();
+
+    await loadDebtData();
+    alert(`✅ Pembayaran utang atas nama "${selectedCustomer.nama}" berhasil disimpan!`);
 }
 
 // ===================================
-// INIT
+// INITIALIZATION
 // ===================================
 function init() {
-    if (searchDebt) searchDebt.addEventListener("input", renderDebts);
+    if (searchDebt) searchDebt.addEventListener("input", renderDebtList);
     if (btnConfirmPayDebt) btnConfirmPayDebt.addEventListener("click", processPayDebt);
-    if (btnClosePayModal) btnClosePayModal.addEventListener("click", () => payModal.style.display = "none");
+    if (btnClosePayDebtModal) btnClosePayDebtModal.addEventListener("click", closePayModal);
 
-    loadDebts();
+    loadDebtData();
 }
 
 init();

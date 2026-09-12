@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>KlontongIn - Buku Bon & Utang</title>
+    <title>KlontongIn - Bon / Utang</title>
     
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="image/logo-warungku.png">
@@ -21,7 +21,7 @@
         <!-- Header Logo -->
         <div class="header-logo" style="text-align: center; margin-bottom: 20px;">
             <img src="image/logo-warungku.png" alt="KlontongIn Logo" class="brand-logo">
-            <h1>KlontongIn - Buku Bon</h1>
+            <h1>KlontongIn</h1>
         </div>
 
         <nav class="main-nav">
@@ -32,44 +32,48 @@
             <a href="report.html" class="nav-link">📊 Laporan</a>
         </nav>
 
-        <!-- Ringkasan Total Utang -->
-        <div class="card" style="background: #fff3cd; border: 1px solid #ffeeba; text-align: center; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-            <h3 style="margin: 0; color: #856404; font-size: 14px;">Total Piutang / Bon Belum Lunas</h3>
-            <h1 id="totalDebtAmount" style="margin: 5px 0 0 0; color: #721c24; font-size: 28px;">Rp 0</h1>
+        <!-- Total Akumulasi Utang Tetangga -->
+        <div style="background: #fff; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 15px; border-left: 4px solid #e74c3c;">
+            <small style="color: #666; font-weight: bold; font-size: 12px;">TOTAL PIUTANG / BON BELUM LUNAS</small>
+            <h2 id="totalAllDebt" style="margin: 4px 0 0 0; color: #e74c3c; font-size: 24px;">Rp 0</h2>
         </div>
 
-        <!-- Filter & Search -->
+        <!-- Filter Pencarian Pelanggan -->
         <div class="sort-box" style="margin-bottom: 15px;">
             <input type="text" id="searchDebt" placeholder="🔍 Cari nama pelanggan / tetangga..." style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
         </div>
 
-        <!-- Daftar Bon -->
+        <!-- Daftar Utang Pelanggan -->
         <div class="list-box">
-            <h2>📝 Catatan Utang Tetangga</h2>
+            <h2 style="margin-bottom: 10px;">📝 Catatan Bon Pelanggan</h2>
             <div id="debtList"></div>
         </div>
     </div>
 
-    <!-- Modal Cicil / Pelunasan -->
-    <div id="payModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
-        <div style="background: white; padding: 20px; border-radius: 12px; max-width: 380px; width: 90%; text-align: center;">
-            <h3 style="margin-top: 0;">Bayar / Cicil Bon</h3>
-            <p id="modalCustomerInfo" style="font-weight: bold; color: #333; margin-bottom: 5px;"></p>
-            <p id="modalRemainingInfo" style="color: #721c24; font-size: 18px; font-weight: bold; margin-top: 0;"></p>
+    <!-- Modal Cicil / Pelunasan Utang -->
+    <div id="payDebtModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+        <div style="background: white; padding: 20px; border-radius: 12px; max-width: 400px; width: 90%; text-align: left;">
+            <h3 style="margin-top: 0; text-align: center;">💳 Bayar / Cicil Utang</h3>
+            <p id="modalCustomerName" style="font-weight: bold; color: #D67A67; text-align: center; margin-bottom: 15px;"></p>
+            
+            <div class="form-group" style="margin-bottom: 10px;">
+                <label>Total Sisa Utang:</label>
+                <input type="text" id="modalCurrentDebt" readonly style="width: 100%; padding: 8px; border-radius: 6px; background: #eee; font-weight: bold;">
+            </div>
 
-            <div style="text-align: left; margin-bottom: 15px;">
-                <label for="payAmountInput" style="font-weight: bold; font-size: 13px;">Jumlah Uang Diterima (Rp):</label>
-                <input id="payAmountInput" type="number" placeholder="Masukkan nominal..." style="width: 100%; padding: 8px; margin-top: 4px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label for="modalPayAmount">Nominal yang Dibayarkan (Rp):*</label>
+                <input type="number" id="modalPayAmount" placeholder="Masukkan jumlah bayar..." min="1" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; font-weight: bold; box-sizing: border-box;">
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <button id="btnConfirmPayDebt" class="btn btn-success" style="flex: 1;">✅ Simpan</button>
-                <button id="btnClosePayModal" class="btn btn-secondary" style="flex: 1;">Batal</button>
+                <button id="btnConfirmPayDebt" class="btn btn-primary" style="flex: 1; background: #27ae60;">✅ Simpan Pembayaran</button>
+                <button id="btnClosePayDebtModal" class="btn btn-secondary">Batal</button>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
-    <script src="debts.js?v=1.0"></script>
+    <script src="debts.js?v=2.0"></script>
 </body>
 </html>
