@@ -56,15 +56,15 @@
                 <div id="desktopCategoryList" style="display: flex; flex-direction: column; gap: 6px;"></div>
             </div>
 
-            <!-- Area Tengah: Pencarian & Grid Produk -->
+            <!-- Area Produk & Pencarian -->
             <div class="products-section" style="width: 100%;">
-                <!-- Box Search & Scan Berdampingan Rapi -->
-                <div style="display: flex; gap: 8px; margin-bottom: 12px; width: 100%; align-items: center;">
-                    <input type="text" id="searchCashier" placeholder="🔍 Cari barang / scan barcode..." style="flex: 1; min-width: 0; padding: 10px 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box;">
-                    <button id="btnScanCashier" class="btn btn-primary" style="white-space: nowrap; flex-shrink: 0; padding: 10px 14px; font-weight: bold;">📷 Scan</button>
+                <!-- Box Search & Scan Berdampingan Rapi dalam 1 Baris -->
+                <div style="display: flex; gap: 8px; margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+                    <input type="text" id="searchCashier" placeholder="🔍 Cari nama barang / barcode..." style="flex: 1; min-width: 0; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box;">
+                    <button id="btnScanCashier" class="btn btn-primary" style="white-space: nowrap; flex-shrink: 0; padding: 12px 16px; font-weight: bold; border-radius: 8px;">📷 Scan</button>
                 </div>
 
-                <!-- Tempat Grid Barang & Kategori -->
+                <!-- Tempat Grid Barang / Kategori -->
                 <div id="cashierItems" class="items-grid" style="width: 100%;"></div>
             </div>
 
@@ -156,6 +156,6 @@
     <div id="receiptPrintArea" style="display: none;"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
-    <script src="cashier.js?v=14.0"></script>
+    <script src="cashier.js?v=15.0"></script>
 </body>
 </html>
