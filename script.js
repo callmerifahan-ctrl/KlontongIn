@@ -84,8 +84,6 @@ function updateSummary() {
     const totalStok = items.reduce((sum, item) => sum + (parseFloat(item.stok) || 0), 0);
 
     summaryTotalJenis.textContent = `${totalJenis} Jenis`;
-    
-    // Pembulatan rapi desimal stok total
     const formattedTotalStok = Number.isInteger(totalStok) ? totalStok : parseFloat(totalStok.toFixed(2));
     summaryTotalStok.textContent = `${formattedTotalStok} Item/Kg`;
 }
@@ -200,7 +198,7 @@ async function uploadImageToSupabase(file) {
 }
 
 // ===================================
-// RENDERERS
+// RENDERERS (CATEGORY-FIRST FOR INVENTORY)
 // ===================================
 function renderItems() {
     if (!itemList) return;
@@ -209,10 +207,22 @@ function renderItems() {
     const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
     const selectedCat = filterCategory ? filterCategory.value : "";
 
+    // Tampilkan pesan panduan pilih kategori jika belum cari/pilih kategori
+    if (keyword === "" && selectedCat === "") {
+        const hint = document.createElement("div");
+        hint.style.cssText = "text-align: center; color: #888; padding: 30px 10px; border: 2px dashed #ddd; border-radius: 8px; margin-top: 10px;";
+        hint.innerHTML = `
+            <p style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">📂 Pilih Kategori atau Cari Barang</p>
+            <p style="font-size: 13px; margin: 0;">Gunakan menu filter di atas atau ketik nama barang untuk menampilkan daftar stok.</p>
+        `;
+        itemList.appendChild(hint);
+        return;
+    }
+
     const filtered = items.filter(item => {
         const matchesName = (item.nama_barang || "").toLowerCase().includes(keyword) || (item.barcode || "").toLowerCase().includes(keyword);
         const matchesCategory = selectedCat === "" || (item.kategori || "") === selectedCat;
-        return matchesName && matchesCategory;
+        return keyword !== "" ? matchesName : matchesCategory;
     });
 
     if (filtered.length === 0) {

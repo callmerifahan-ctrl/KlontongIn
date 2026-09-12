@@ -14,8 +14,8 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, 
 let items = [];
 let cart = [];
 let html5QrCode = null;
-let currentPaymentMethod = ""; // 'Tunai', 'QRIS', 'Bon'
-let selectedCategory = "";
+let currentPaymentMethod = ""; 
+let selectedCategory = ""; // Default kosong -> hanya munculkan kategori
 
 // ===================================
 // DOM ELEMENTS
@@ -26,12 +26,10 @@ const cartTotal = document.getElementById("cartTotal");
 const checkoutButton = document.getElementById("checkoutButton");
 const searchCashier = document.getElementById("searchCashier");
 
-// Barcode Scanner Elements
 const btnScanCashier = document.getElementById("btnScanCashier");
 const btnCloseScanner = document.getElementById("btnCloseScanner");
 const scannerModal = document.getElementById("scannerModal");
 
-// Payment Modal Elements
 const paymentModal = document.getElementById("paymentModal");
 const modalTotalPay = document.getElementById("modalTotalPay");
 const btnPayCash = document.getElementById("btnPayCash");
@@ -63,7 +61,6 @@ function roundPrice(rawPrice) {
     return Math.round(rawPrice / 100) * 100;
 }
 
-// Cek apakah produk termasuk Telur / Beras
 function isKiloan(name) {
     const lowerName = (name || "").toLowerCase();
     return lowerName.includes("telur") || lowerName.includes("beras");
@@ -327,7 +324,7 @@ async function processCheckout() {
 }
 
 // ===================================
-// RENDERERS & CATEGORY FILTERS
+// RENDERERS & CATEGORY-FIRST DISPLAY
 // ===================================
 function renderCategoryFilter() {
     let filterContainer = document.getElementById("cashierCategoryFilter");
@@ -342,9 +339,8 @@ function renderCategoryFilter() {
     if (!filterContainer) return;
 
     const categories = [
-        { label: "Semua", value: "" },
         { label: "🌾 Sembako", value: "Sembako" },
-        { label: "🍜 Mie", value: "Mie Instan" },
+        { label: "🍜 Mie Instan", value: "Mie Instan" },
         { label: "🥤 Minuman", value: "Minuman" },
         { label: "🍿 Snack", value: "Snack" },
         { label: "🚬 Rokok", value: "Rokok" },
@@ -361,7 +357,7 @@ function renderCategoryFilter() {
         btn.type = "button";
         btn.textContent = cat.label;
         btn.style.cssText = `
-            padding: 6px 12px;
+            padding: 8px 14px;
             font-size: 13px;
             border-radius: 16px;
             border: 1px solid #ccc;
@@ -373,7 +369,7 @@ function renderCategoryFilter() {
         `;
         
         btn.addEventListener("click", () => {
-            selectedCategory = cat.value;
+            selectedCategory = (selectedCategory === cat.value) ? "" : cat.value;
             renderCategoryFilter();
             renderCashierItems();
         });
@@ -386,10 +382,17 @@ function renderCashierItems() {
     cashierItems.replaceChildren();
     const keyword = searchCashier ? searchCashier.value.toLowerCase().trim() : "";
 
+    // Jika search kosong dan kategori belum dipilih -> Tampilkan Grid Tombol Kategori Besar
+    if (keyword === "" && selectedCategory === "") {
+        renderCategoryGridDisplay();
+        return;
+    }
+
+    // Filter barang berdasarkan pencarian ATAU kategori yang diklik
     const filtered = items.filter(item => {
-        const matchesName = (item.name || "").toLowerCase().includes(keyword);
+        const matchesName = (item.name || "").toLowerCase().includes(keyword) || (item.code || "").toLowerCase().includes(keyword);
         const matchesCategory = selectedCategory === "" || item.category === selectedCategory;
-        return matchesName && matchesCategory;
+        return keyword !== "" ? matchesName : matchesCategory;
     });
 
     if (filtered.length === 0) {
@@ -400,6 +403,49 @@ function renderCashierItems() {
     filtered.forEach((item) => {
         cashierItems.appendChild(createCashierCard(item));
     });
+}
+
+// Display Grid Kategori Utama jika belum ada filter
+function renderCategoryGridDisplay() {
+    const grid = document.createElement("div");
+    grid.style.cssText = "display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;";
+
+    const categories = [
+        { label: "🌾 Sembako & Beras", value: "Sembako", color: "#fff3cd" },
+        { label: "🍜 Mie Instan", value: "Mie Instan", color: "#d1ecf1" },
+        { label: "🥤 Minuman & Galon", value: "Minuman", color: "#d4edda" },
+        { label: "🍿 Snack & Jajanan", value: "Snack", color: "#f8d7da" },
+        { label: "🚬 Rokok & Tembakau", value: "Rokok", color: "#e2e3e5" },
+        { label: "🧼 Perlengkapan Mandi", value: "Perlengkapan", color: "#e0f7fa" },
+        { label: "🍦 Es Krim & Pendingin", value: "Pendingin", color: "#fff8e1" },
+        { label: "💊 Obat & Health", value: "Obat", color: "#f3e5f5" },
+        { label: "🔥 Gas & Rumah Tangga", value: "Rumah Tangga", color: "#fbe9e7" }
+    ];
+
+    categories.forEach(cat => {
+        const card = document.createElement("div");
+        card.style.cssText = `
+            background: ${cat.color};
+            padding: 15px 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        `;
+        card.textContent = cat.label;
+        card.addEventListener("click", () => {
+            selectedCategory = cat.value;
+            renderCategoryFilter();
+            renderCashierItems();
+        });
+        grid.appendChild(card);
+    });
+
+    cashierItems.appendChild(grid);
 }
 
 function createCashierCard(item) {
