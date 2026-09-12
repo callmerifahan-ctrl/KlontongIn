@@ -48,25 +48,27 @@
             <a href="report.html" class="nav-link"><span class="nav-icon">📊</span><span>Laporan</span></a>
         </nav>
 
-        <!-- Area Kasir Main (Layout 3 Kolom Laptop / Stacked Mobile) -->
+        <!-- Area Kasir Main -->
         <div class="cashier-layout">
-            <!-- Kolom 1: Sidebar Kategori (Tampil di Laptop) -->
+            <!-- Sidebar Kategori (Khusus Tampil di Laptop) -->
             <div class="sidebar-categories">
                 <h3 style="margin-top: 0; margin-bottom: 12px; font-size: 15px; border-bottom: 2px solid #D67A67; padding-bottom: 6px;">📂 Kategori</h3>
                 <div id="desktopCategoryList" style="display: flex; flex-direction: column; gap: 6px;"></div>
             </div>
 
-            <!-- Kolom 2: Pencarian & Grid Produk -->
-            <div class="products-section">
-                <div style="display: flex; gap: 8px; margin-bottom: 10px; width: 100%;">
-                    <input type="text" id="searchCashier" placeholder="🔍 Cari barang / scan barcode..." style="flex: 1; min-width: 0; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
-                    <button id="btnScanCashier" class="btn btn-primary" style="white-space: nowrap; flex-shrink: 0;">📷 Scan</button>
+            <!-- Area Tengah: Pencarian & Grid Produk -->
+            <div class="products-section" style="width: 100%;">
+                <!-- Box Search & Scan Berdampingan Rapi -->
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; width: 100%; align-items: center;">
+                    <input type="text" id="searchCashier" placeholder="🔍 Cari barang / scan barcode..." style="flex: 1; min-width: 0; padding: 10px 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box;">
+                    <button id="btnScanCashier" class="btn btn-primary" style="white-space: nowrap; flex-shrink: 0; padding: 10px 14px; font-weight: bold;">📷 Scan</button>
                 </div>
 
-                <div id="cashierItems" class="items-grid"></div>
+                <!-- Tempat Grid Barang & Kategori -->
+                <div id="cashierItems" class="items-grid" style="width: 100%;"></div>
             </div>
 
-            <!-- Kolom 3: Keranjang Belanja -->
+            <!-- Area Keranjang Belanja -->
             <div class="cart-section">
                 <h2 style="margin-top: 0; font-size: 18px;">🛒 Keranjang Belanja</h2>
                 <ul id="cartItems" style="list-style: none; padding: 0; margin: 0 0 15px 0;"></ul>
@@ -154,6 +156,6 @@
     <div id="receiptPrintArea" style="display: none;"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
-    <script src="cashier.js?v=13.0"></script>
+    <script src="cashier.js?v=14.0"></script>
 </body>
 </html>
