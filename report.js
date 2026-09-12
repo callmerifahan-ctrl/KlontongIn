@@ -87,7 +87,18 @@ async function loadReportData() {
     if (reportOmzet) reportOmzet.textContent = formatRupiah(totalOmzet);
     if (reportKeuntungan) reportKeuntungan.textContent = formatRupiah(totalKeuntungan);
     if (reportTotalTransaksi) reportTotalTransaksi.textContent = transactions.length;
-    if (reportTerjual) reportTerjual.textContent = totalItemTerjual;
+
+    // Biar angka desimal dari timbangan gak bocor (floating point bug)
+    function formatQty(qty) {
+        const num = parseFloat(qty || 0);
+        return Number.isInteger(num) ? num : parseFloat(num.toFixed(2));
+    }
+
+    // Pas mau nampilin ke HTML:
+    const reportTerjual = document.getElementById("reportTerjual");
+    if (reportTerjual) {
+        reportTerjual.textContent = formatQty(totalItemTerjual);
+    }
 
     if (topProductsList) {
         topProductsList.replaceChildren();
