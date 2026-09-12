@@ -16,6 +16,7 @@ let cart = [];
 let html5QrCode = null;
 let currentPaymentMethod = ""; 
 let selectedCategory = "";
+let lastSavedTransaction = null;
 
 // ===================================
 // DOM ELEMENTS
@@ -50,6 +51,13 @@ const debtRemainingTotal = document.getElementById("debtRemainingTotal");
 const btnConfirmPayment = document.getElementById("btnConfirmPayment");
 const btnClosePaymentModal = document.getElementById("btnClosePaymentModal");
 
+// Modal Struk Elements
+const receiptSuccessModal = document.getElementById("receiptSuccessModal");
+const receiptTrxCodeText = document.getElementById("receiptTrxCodeText");
+const btnPrintReceiptBtn = document.getElementById("btnPrintReceiptBtn");
+const btnCloseReceiptSuccessModal = document.getElementById("btnCloseReceiptSuccessModal");
+const receiptPrintArea = document.getElementById("receiptPrintArea");
+
 // ===================================
 // UTILITIES & LOGIKA HARGA PAKET
 // ===================================
@@ -66,11 +74,9 @@ function isKiloan(name) {
     return lowerName.includes("telur") || lowerName.includes("beras");
 }
 
-// Logika Hitung Harga (Termasuk Paket Es Batu)
 function calculateItemSubtotal(item) {
     const lowerName = (item.name || "").toLowerCase();
     
-    // Khusus Es Batu: 1 pcs 3rb, 2 pcs 5rb
     if (lowerName.includes("es batu")) {
         const qty = Math.floor(item.qty);
         const pairs = Math.floor(qty / 2);
@@ -78,7 +84,6 @@ function calculateItemSubtotal(item) {
         return (pairs * 5000) + (remainder * 3000);
     }
 
-    // Barang biasa / kiloan lainnya
     return roundPrice(item.price * item.qty);
 }
 
@@ -240,7 +245,7 @@ function updateDebtRemaining() {
 }
 
 // ===================================
-// CHECKOUT EXECUTION
+// CHECKOUT EXECUTION & PRINT STRUK
 // ===================================
 async function processCheckout() {
     if (cart.length === 0) return alert("Keranjang masih kosong!");
@@ -290,7 +295,6 @@ async function processCheckout() {
 
     const transactionCode = await generateTransactionCode();
     
-    // Simpan data keranjang lengkap dengan subtotal yang sudah terhitung hematnya
     const cartToSave = cart.map(c => ({
         ...c,
         subtotal: calculateItemSubtotal(c)
@@ -337,13 +341,83 @@ async function processCheckout() {
     btnConfirmPayment.disabled = false;
     btnConfirmPayment.textContent = "✅ Simpan Transaksi";
 
+    lastSavedTransaction = newTransaction;
     paymentModal.style.display = "none";
     clearCart();
 
     await loadDataSupabase();
     renderCashierItems();
 
-    alert(`✅ Transaksi ${transactionCode} Berhasil Disimpan!`);
+    // Tampilkan Modal Sukses & Opsi Cetak Struk
+    if (receiptSuccessModal) {
+        receiptTrxCodeText.textContent = `Kode: ${transactionCode}`;
+        receiptSuccessModal.style.display = "flex";
+    }
+}
+
+// Fungsi Print Struk Thermal
+function printReceipt() {
+    if (!lastSavedTransaction) return;
+
+    const trx = lastSavedTransaction;
+    const dateStr = new Date(trx.tanggal).toLocaleString("id-ID");
+
+    let itemsHTML = "";
+    trx.item.forEach(i => {
+        itemsHTML += `
+            <div style="display:flex; justify-content:space-between; margin-bottom:2px;">
+                <span>${i.name}</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:10px;">
+                <span>${i.qty} x ${formatRupiah(i.price)}</span>
+                <span>${formatRupiah(i.subtotal)}</span>
+            </div>
+        `;
+    });
+
+    receiptPrintArea.innerHTML = `
+        <div style="text-align:center; margin-bottom:8px;">
+            <h3 style="margin:0; font-size:14px;">WARUNG KLONTONGIN</h3>
+            <p style="margin:2px 0 0 0; font-size:10px;">Struk Pembayaran Belanja</p>
+        </div>
+        <div style="border-bottom:1px dashed #000; margin-bottom:6px;"></div>
+        <div style="font-size:10px; margin-bottom:6px;">
+            <div>No: ${trx.kode_transaksi}</div>
+            <div>Tgl: ${dateStr}</div>
+            <div>Metode: ${trx.metode_pembayaran}</div>
+            ${trx.nama_pelanggan ? `<div>Pelanggan: ${trx.nama_pelanggan}</div>` : ''}
+        </div>
+        <div style="border-bottom:1px dashed #000; margin-bottom:6px;"></div>
+        ${itemsHTML}
+        <div style="border-bottom:1px dashed #000; margin-bottom:6px;"></div>
+        <div style="display:flex; justify-content:space-between; font-weight:bold;">
+            <span>TOTAL:</span>
+            <span>${formatRupiah(trx.total)}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+            <span>BAYAR:</span>
+            <span>${formatRupiah(trx.bayar)}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+            <span>KEMBALI:</span>
+            <span>${formatRupiah(trx.kembalian)}</span>
+        </div>
+        ${trx.sisa_utang > 0 ? `
+            <div style="display:flex; justify-content:space-between; font-weight:bold; color:red;">
+                <span>SISA UTANG:</span>
+                <span>${formatRupiah(trx.sisa_utang)}</span>
+            </div>
+        ` : ''}
+        <div style="border-bottom:1px dashed #000; margin-top:6px; margin-bottom:8px;"></div>
+        <div style="text-align:center; font-size:10px;">
+            <p style="margin:0;">Terima kasih atas kunjungannya!</p>
+            <p style="margin:2px 0 0 0;">Barang yang dibeli tidak dapat ditukar.</p>
+        </div>
+    `;
+
+    receiptPrintArea.style.display = "block";
+    window.print();
+    receiptPrintArea.style.display = "none";
 }
 
 // ===================================
@@ -480,7 +554,6 @@ function createCashierCard(item) {
 
     const price = document.createElement("p");
     
-    // Penanda Khusus jika Es Batu
     if (item.name.toLowerCase().includes("es batu")) {
         price.textContent = `${formatRupiah(item.sellPrice)} (2 Pcs Rp 5.000)`;
         price.style.fontSize = "13px";
@@ -518,14 +591,12 @@ function createCartItem(item) {
     title.style.display = "block";
     title.textContent = item.name;
 
-    // Subtotal otomatis pakai kalkulator promo
     const calculatedPrice = calculateItemSubtotal(item);
     
     const subtotal = document.createElement("small");
     subtotal.style.color = "#D67A67";
     subtotal.style.fontWeight = "bold";
     
-    // Beri info promo jika es batu
     if (item.name.toLowerCase().includes("es batu") && item.qty >= 2) {
         subtotal.textContent = `${formatRupiah(calculatedPrice)} 🏷️ (Diskon Paket)`;
     } else {
@@ -624,6 +695,9 @@ function setupEventListeners() {
 
     if (btnConfirmPayment) btnConfirmPayment.addEventListener("click", processCheckout);
     if (btnClosePaymentModal) btnClosePaymentModal.addEventListener("click", () => paymentModal.style.display = "none");
+
+    if (btnPrintReceiptBtn) btnPrintReceiptBtn.addEventListener("click", printReceipt);
+    if (btnCloseReceiptSuccessModal) btnCloseReceiptSuccessModal.addEventListener("click", () => receiptSuccessModal.style.display = "none");
 
     if (btnScanCashier) btnScanCashier.addEventListener("click", openScanner);
     if (btnCloseScanner) btnCloseScanner.addEventListener("click", closeScanner);
