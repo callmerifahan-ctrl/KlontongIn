@@ -35,17 +35,21 @@
             <a href="report.html" class="nav-link">📊 Laporan</a>
         </nav>
 
-        <!-- Tombol Quick Scan / Foto Barang -->
-        <div class="card" style="margin-bottom: 20px; text-align: center;">
-            <label for="cameraInput" class="btn btn-primary" style="display: inline-block; cursor: pointer; width: 100%; box-sizing: border-box; font-weight: bold;">
-                📷 Ambil Foto / Scan Barang
+        <!-- Tombol Akses Cepat (Foto & Tambah Barang) -->
+        <div class="card" style="margin-bottom: 20px; display: flex; gap: 10px;">
+            <label for="cameraInput" class="btn btn-primary" style="flex: 1; text-align: center; cursor: pointer; font-weight: bold; margin: 0;">
+                📷 Foto / Scan Barang
             </label>
             <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display: none;">
-            <small id="statusOCR" style="display: none; margin-top: 8px; font-weight: bold; font-size: 13px;"></small>
+            
+            <button id="btnToggleForm" class="btn" style="flex: 1; background: #27ae60; color: white; font-weight: bold;">
+                ➕ Tambah Barang Baru
+            </button>
         </div>
+        <small id="statusOCR" style="display: none; margin-top: -10px; margin-bottom: 15px; font-weight: bold; font-size: 13px; text-align: center;"></small>
 
-        <!-- Form Tambah / Edit Barang -->
-        <div class="form-box">
+        <!-- Form Tambah / Edit Barang (Hidden Default) -->
+        <div id="formContainer" class="form-box" style="display: none; margin-bottom: 20px;">
             <h2 id="formTitle">➕ Tambah Barang Baru</h2>
             <form id="itemForm">
                 <input type="hidden" id="itemId">
@@ -95,7 +99,7 @@
 
                 <div class="form-actions" style="display: flex; gap: 10px;">
                     <button type="submit" id="btnSubmit" class="btn btn-primary" style="flex: 1;">Simpan Barang</button>
-                    <button type="button" id="btnCancel" class="btn btn-secondary" style="display: none;">Batal</button>
+                    <button type="button" id="btnCancel" class="btn btn-secondary">Batal</button>
                 </div>
             </form>
         </div>
@@ -162,6 +166,6 @@
     <div id="toast" class="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
-    <script src="script.js?v=7.0"></script>
+    <script src="script.js?v=8.0"></script>
 </body>
 </html>

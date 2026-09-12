@@ -14,6 +14,9 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, 
 let items = [];
 let currentUploadedFile = null;
 
+const formContainer = document.getElementById("formContainer");
+const btnToggleForm = document.getElementById("btnToggleForm");
+
 const itemForm = document.getElementById("itemForm");
 const formTitle = document.getElementById("formTitle");
 const itemIdInput = document.getElementById("itemId");
@@ -66,6 +69,20 @@ function showToast(message) {
     } else {
         alert(message);
     }
+}
+
+// ===================================
+// TOGGLE FORM VISIBILITY
+// ===================================
+function openForm() {
+    if (formContainer) formContainer.style.display = "block";
+    if (btnToggleForm) btnToggleForm.style.display = "none";
+}
+
+function closeForm() {
+    if (formContainer) formContainer.style.display = "none";
+    if (btnToggleForm) btnToggleForm.style.display = "block";
+    resetForm();
 }
 
 // ===================================
@@ -312,6 +329,7 @@ function createItemCard(item) {
 }
 
 function populateForm(item) {
+    openForm();
     formTitle.textContent = "✏️ Edit Barang";
     itemIdInput.value = item.id;
     itemImageUrlInput.value = item.image_url || "";
@@ -323,7 +341,6 @@ function populateForm(item) {
     if (kategoriInput) kategoriInput.value = item.kategori || "";
 
     btnSubmit.textContent = "Simpan Perubahan";
-    btnCancel.style.display = "inline-block";
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -334,7 +351,6 @@ function resetForm() {
     if (itemForm) itemForm.reset();
 
     btnSubmit.textContent = "Simpan Barang";
-    btnCancel.style.display = "none";
     currentUploadedFile = null;
     if (statusOCR) statusOCR.style.display = "none";
 }
@@ -373,7 +389,7 @@ async function handleSubmit(e) {
         showToast("Barang baru berhasil ditambahkan!");
     }
 
-    resetForm();
+    closeForm();
     await loadItems();
 }
 
@@ -434,6 +450,7 @@ if (cameraInput) {
 if (btnOptionNew) {
     btnOptionNew.addEventListener("click", () => {
         photoOptionModal.style.display = "none";
+        openForm();
         if (namaBarangInput) namaBarangInput.focus();
         window.scrollTo({ top: 0, behavior: "smooth" });
     });
@@ -480,8 +497,10 @@ if (btnSubmitAddStock) {
 // INITIALIZATION
 // ===================================
 function init() {
+    if (btnToggleForm) btnToggleForm.addEventListener("click", openForm);
+    if (btnCancel) btnCancel.addEventListener("click", closeForm);
+
     if (itemForm) itemForm.addEventListener("submit", handleSubmit);
-    if (btnCancel) btnCancel.addEventListener("click", resetForm);
     if (searchInput) searchInput.addEventListener("input", renderItems);
     if (filterCategory) filterCategory.addEventListener("change", renderItems);
 
