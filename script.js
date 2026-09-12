@@ -30,6 +30,7 @@ const stokBarangInput = document.getElementById("stokBarang");
 const hargaBeliInput = document.getElementById("hargaBeli");
 const hargaJualInput = document.getElementById("hargaJual");
 const kategoriInput = document.getElementById("kategoriBarang");
+const tglKadaluwarsaInput = document.getElementById("tglKadaluwarsa");
 
 const btnSubmit = document.getElementById("btnSubmit");
 const btnCancel = document.getElementById("btnCancel");
@@ -207,7 +208,6 @@ function renderItems() {
     const keyword = searchInput ? searchInput.value.toLowerCase().trim() : "";
     const selectedCat = filterCategory ? filterCategory.value : "";
 
-    // Tampilkan pesan panduan pilih kategori jika belum cari/pilih kategori
     if (keyword === "" && selectedCat === "") {
         const hint = document.createElement("div");
         hint.style.cssText = "text-align: center; color: #888; padding: 30px 10px; border: 2px dashed #ddd; border-radius: 8px; margin-top: 10px;";
@@ -270,6 +270,8 @@ function createItemCard(item) {
     catBadge.style.color = "#555";
     catBadge.textContent = item.kategori ? `🏷️ ${item.kategori}` : "📦 Lainnya";
 
+    titleBox.append(title, catBadge);
+
     if (item.barcode) {
         const barcodeBadge = document.createElement("small");
         barcodeBadge.style.background = "#fff3cd";
@@ -278,9 +280,35 @@ function createItemCard(item) {
         barcodeBadge.style.borderRadius = "4px";
         barcodeBadge.style.marginLeft = "4px";
         barcodeBadge.textContent = `║▌ ${item.barcode}`;
-        titleBox.append(title, catBadge, barcodeBadge);
-    } else {
-        titleBox.append(title, catBadge);
+        titleBox.appendChild(barcodeBadge);
+    }
+
+    // Indikator Expired Date
+    if (item.tgl_kadaluwarsa) {
+        const today = new Date();
+        const expDate = new Date(item.tgl_kadaluwarsa);
+        const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+
+        const expBadge = document.createElement("small");
+        expBadge.style.padding = "2px 6px";
+        expBadge.style.borderRadius = "4px";
+        expBadge.style.marginLeft = "4px";
+        expBadge.style.fontWeight = "bold";
+
+        if (diffDays < 0) {
+            expBadge.style.background = "#f8d7da";
+            expBadge.style.color = "#721c24";
+            expBadge.textContent = "⏳ KADALUWARSA!";
+        } else if (diffDays <= 7) {
+            expBadge.style.background = "#fff3cd";
+            expBadge.style.color = "#856404";
+            expBadge.textContent = `⏳ Exp: ${diffDays} hari lagi`;
+        } else {
+            expBadge.style.background = "#e2e3e5";
+            expBadge.style.color = "#383d41";
+            expBadge.textContent = `📅 Exp: ${item.tgl_kadaluwarsa}`;
+        }
+        titleBox.appendChild(expBadge);
     }
 
     const price = document.createElement("div");
@@ -370,6 +398,7 @@ function populateForm(item) {
     hargaBeliInput.value = item.harga_beli;
     hargaJualInput.value = item.harga_jual;
     if (kategoriInput) kategoriInput.value = item.kategori || "";
+    if (tglKadaluwarsaInput) tglKadaluwarsaInput.value = item.tgl_kadaluwarsa || "";
 
     btnSubmit.textContent = "Simpan Perubahan";
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -399,6 +428,7 @@ async function handleSubmit(e) {
     const harga_beli = parseFloat(hargaBeliInput.value);
     const harga_jual = parseFloat(hargaJualInput.value);
     const kategori = kategoriInput ? kategoriInput.value : "";
+    const tgl_kadaluwarsa = tglKadaluwarsaInput && tglKadaluwarsaInput.value ? tglKadaluwarsaInput.value : null;
 
     let image_url = itemImageUrlInput.value;
 
@@ -408,7 +438,7 @@ async function handleSubmit(e) {
         if (uploadedUrl) image_url = uploadedUrl;
     }
 
-    const payload = { nama_barang, barcode, stok, harga_beli, harga_jual, image_url, kategori };
+    const payload = { nama_barang, barcode, stok, harga_beli, harga_jual, image_url, kategori, tgl_kadaluwarsa };
 
     if (id) {
         const { error } = await supabaseClient.from("barang").update(payload).eq("id", id);
