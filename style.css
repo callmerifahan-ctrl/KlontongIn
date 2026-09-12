@@ -19,11 +19,12 @@ body {
 
 .container {
     width: 100%;
-    max-width: 1200px; /* Diperlebar agar pas di layar laptop */
+    max-width: 1200px;
     background: #ffffff;
     padding: 20px;
     border-radius: 16px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    overflow: hidden; /* Mencegah elemen bocor keluar container */
 }
 
 /* Header & Logo */
@@ -144,20 +145,30 @@ body {
 }
 
 /* ===================================
-   LAYOUT KASIR & RESPONSIF LAPTOP
+   LAYOUT KASIR RESPONSIF
    =================================== */
 .cashier-layout {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    width: 100%;
 }
 
-/* Grid Kasir & Item Produk */
+.products-section {
+    width: 100%;
+}
+
+.cart-section {
+    width: 100%;
+}
+
+/* Grid Items Produk */
 .items-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 12px;
     margin-top: 10px;
+    width: 100%;
 }
 
 .cashier-card {
@@ -201,24 +212,25 @@ body {
     font-size: 12px;
 }
 
-/* Media Query Khusus Layar Laptop & Desktop (Lebar > 768px) */
+/* Responsif Khusus Layar Laptop (Lebar > 768px) */
 @media (min-width: 768px) {
     .container {
-        padding: 30px;
+        padding: 25px;
     }
 
-    /* Kasir Layout 2 Kolom (Kiri: Produk & Kategori, Kanan: Keranjang) */
     .cashier-layout {
         flex-direction: row;
         align-items: flex-start;
     }
 
     .products-section {
-        flex: 1.8;
+        flex: 1;
+        min-width: 0; /* Menjaga flex item tidak melebar melebihi batas */
     }
 
     .cart-section {
-        flex: 1;
+        width: 320px; /* Ukuran tetap untuk sidebar keranjang */
+        flex-shrink: 0;
         position: sticky;
         top: 20px;
     }

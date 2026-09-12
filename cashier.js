@@ -501,7 +501,7 @@ function renderCashierItems() {
 // Display Grid Kategori Utama (Responsif HP & Laptop)
 function renderCategoryGridDisplay() {
     const grid = document.createElement("div");
-    grid.style.cssText = "display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-top: 10px;";
+    grid.style.cssText = "display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 10px; width: 100%;";
 
     const categories = [
         { label: "🌾 Sembako & Beras", value: "Sembako", color: "#fff3cd" },
@@ -519,16 +519,19 @@ function renderCategoryGridDisplay() {
         const card = document.createElement("div");
         card.style.cssText = `
             background: ${cat.color};
-            padding: 20px 12px;
+            padding: 15px 10px;
             border-radius: 10px;
             text-align: center;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 13px;
             color: #333;
             cursor: pointer;
             border: 1px solid rgba(0,0,0,0.05);
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            transition: transform 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70px;
         `;
         card.textContent = cat.label;
         card.addEventListener("click", () => {
