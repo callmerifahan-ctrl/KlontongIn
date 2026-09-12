@@ -58,19 +58,19 @@
         </nav>
 
         <!-- Area Kasir Main -->
-        <div class="cashier-layout" style="display: flex; flex-direction: column; gap: 15px;">
-            <!-- Kolom Kiri: Produk -->
+        <div class="cashier-layout">
+            <!-- Kolom Kiri: Produk & Kategori -->
             <div class="products-section">
-                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                    <input type="text" id="searchCashier" placeholder="🔍 Cari barang / scan barcode..." style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
-                    <button id="btnScanCashier" class="btn btn-primary" style="white-space: nowrap;">📷 Scan</button>
+                <div style="display: flex; gap: 8px; margin-bottom: 10px; width: 100%;">
+                    <input type="text" id="searchCashier" placeholder="🔍 Cari barang / scan barcode..." style="flex: 1; min-width: 0; padding: 10px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box;">
+                    <button id="btnScanCashier" class="btn btn-primary" style="white-space: nowrap; flex-shrink: 0;">📷 Scan</button>
                 </div>
 
                 <div id="cashierItems" class="items-grid"></div>
             </div>
 
-            <!-- Kolom Kanan: Keranjang -->
-            <div class="cart-section" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <!-- Kolom Kanan: Keranjang Belanja -->
+            <div class="cart-section" style="background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border: 1px solid #eee;">
                 <h2 style="margin-top: 0;">🛒 Keranjang Belanja</h2>
                 <ul id="cartItems" style="list-style: none; padding: 0; margin: 0 0 15px 0;"></ul>
 
@@ -157,6 +157,6 @@
     <div id="receiptPrintArea" style="display: none;"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
-    <script src="cashier.js?v=11.0"></script>
+    <script src="cashier.js?v=12.0"></script>
 </body>
 </html>

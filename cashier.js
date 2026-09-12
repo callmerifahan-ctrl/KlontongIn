@@ -348,14 +348,12 @@ async function processCheckout() {
     await loadDataSupabase();
     renderCashierItems();
 
-    // Tampilkan Modal Sukses & Opsi Cetak Struk
     if (receiptSuccessModal) {
         receiptTrxCodeText.textContent = `Kode: ${transactionCode}`;
         receiptSuccessModal.style.display = "flex";
     }
 }
 
-// Fungsi Print Struk Thermal
 function printReceipt() {
     if (!lastSavedTransaction) return;
 
@@ -500,9 +498,10 @@ function renderCashierItems() {
     });
 }
 
+// Display Grid Kategori Utama (Responsif HP & Laptop)
 function renderCategoryGridDisplay() {
     const grid = document.createElement("div");
-    grid.style.cssText = "display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px;";
+    grid.style.cssText = "display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-top: 10px;";
 
     const categories = [
         { label: "🌾 Sembako & Beras", value: "Sembako", color: "#fff3cd" },
@@ -520,7 +519,7 @@ function renderCategoryGridDisplay() {
         const card = document.createElement("div");
         card.style.cssText = `
             background: ${cat.color};
-            padding: 15px 10px;
+            padding: 20px 12px;
             border-radius: 10px;
             text-align: center;
             font-weight: bold;
@@ -529,6 +528,7 @@ function renderCategoryGridDisplay() {
             cursor: pointer;
             border: 1px solid rgba(0,0,0,0.05);
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: transform 0.1s ease;
         `;
         card.textContent = cat.label;
         card.addEventListener("click", () => {
