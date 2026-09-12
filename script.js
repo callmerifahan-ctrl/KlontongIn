@@ -14,6 +14,9 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, 
 let items = [];
 let currentUploadedFile = null;
 
+const summaryTotalJenis = document.getElementById("summaryTotalJenis");
+const summaryTotalStok = document.getElementById("summaryTotalStok");
+
 const formContainer = document.getElementById("formContainer");
 const btnToggleForm = document.getElementById("btnToggleForm");
 
@@ -69,6 +72,22 @@ function showToast(message) {
     } else {
         alert(message);
     }
+}
+
+// ===================================
+// SUMMARY CALCULATOR
+// ===================================
+function updateSummary() {
+    if (!summaryTotalJenis || !summaryTotalStok) return;
+
+    const totalJenis = items.length;
+    const totalStok = items.reduce((sum, item) => sum + (parseFloat(item.stok) || 0), 0);
+
+    summaryTotalJenis.textContent = `${totalJenis} Jenis`;
+    
+    // Pembulatan rapi desimal stok total
+    const formattedTotalStok = Number.isInteger(totalStok) ? totalStok : parseFloat(totalStok.toFixed(2));
+    summaryTotalStok.textContent = `${formattedTotalStok} Item/Kg`;
 }
 
 // ===================================
@@ -141,6 +160,7 @@ async function loadItems() {
     }
 
     items = data || [];
+    updateSummary();
     renderItems();
 }
 
@@ -163,6 +183,7 @@ async function quickUpdateStock(itemId, delta) {
     }
 
     targetItem.stok = newStock;
+    updateSummary();
     renderItems();
     showToast(`Stok "${targetItem.nama_barang}" diubah jadi ${newStock}`);
 }

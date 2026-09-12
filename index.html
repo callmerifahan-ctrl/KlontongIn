@@ -35,6 +35,18 @@
             <a href="report.html" class="nav-link">📊 Laporan</a>
         </nav>
 
+        <!-- Ringkasan Total Barang & Stok -->
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <div style="flex: 1; background: #fff; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #D67A67;">
+                <small style="color: #666; font-size: 12px; font-weight: bold;">TOTAL PRODUK</small>
+                <h2 id="summaryTotalJenis" style="margin: 4px 0 0 0; color: #333; font-size: 22px;">0 Jenis</h2>
+            </div>
+            <div style="flex: 1; background: #fff; padding: 12px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #27ae60;">
+                <small style="color: #666; font-size: 12px; font-weight: bold;">TOTAL KESELURUHAN STOK</small>
+                <h2 id="summaryTotalStok" style="margin: 4px 0 0 0; color: #333; font-size: 22px;">0 Item</h2>
+            </div>
+        </div>
+
         <!-- Tombol Akses Cepat (Foto & Tambah Barang) -->
         <div class="card" style="margin-bottom: 20px; display: flex; gap: 10px;">
             <label for="cameraInput" class="btn btn-primary" style="flex: 1; text-align: center; cursor: pointer; font-weight: bold; margin: 0;">
@@ -166,6 +178,6 @@
     <div id="toast" class="toast"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
-    <script src="script.js?v=8.0"></script>
+    <script src="script.js?v=9.0"></script>
 </body>
 </html>
