@@ -28,11 +28,11 @@
         </div>
 
         <nav class="main-nav">
-            <a href="index.html" class="nav-link active">📦 Inventori</a>
-            <a href="cashier.html" class="nav-link">🛒 Kasir</a>
-            <a href="debts.html" class="nav-link">📝 Bon / Utang</a>
-            <a href="history.html" class="nav-link">📋 Riwayat Transaksi</a>
-            <a href="report.html" class="nav-link">📊 Laporan</a>
+            <a href="index.html" class="nav-link active"><span class="nav-icon">📦</span><span>Inventori</span></a>
+            <a href="cashier.html" class="nav-link"><span class="nav-icon">🛒</span><span>Kasir</span></a>
+            <a href="debts.html" class="nav-link"><span class="nav-icon">📝</span><span>Bon/Utang</span></a>
+            <a href="history.html" class="nav-link"><span class="nav-icon">📋</span><span>Riwayat</span></a>
+            <a href="report.html" class="nav-link"><span class="nav-icon">📊</span><span>Laporan</span></a>
         </nav>
 
         <!-- Ringkasan Total Barang & Stok -->
@@ -109,7 +109,6 @@
                     <input type="number" id="hargaJual" min="0" required placeholder="0">
                 </div>
 
-                <!-- Input Tanggal Kadaluwarsa Baru -->
                 <div class="form-group">
                     <label for="tglKadaluwarsa">Tanggal Kadaluwarsa / Expired (Opsional):</label>
                     <input type="date" id="tglKadaluwarsa" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box;">
@@ -153,7 +152,7 @@
     </div>
 
     <!-- Modal Pilihan Setelah Foto -->
-    <div id="photoOptionModal" class="modal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+    <div id="photoOptionModal" class="modal">
         <div style="background: white; padding: 20px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
             <h3 style="margin-top: 0;">Foto Berhasil Diambil</h3>
             <p style="color: #666; font-size: 14px;">Pilih tindakan untuk foto barang ini:</p>
