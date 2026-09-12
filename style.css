@@ -1,628 +1,229 @@
 /* ===================================
-   KLONTONGIN DESIGN SYSTEM & VARIABLES
-=================================== */
-:root {
-    /* Brand Colors */
-    --primary: #D67A67;
-    --primary-hover: #C86855;
-
-    /* Background Colors */
-    --background: #FFF8F5;
-    --surface: #FFFFFF;
-    --surface-soft: #FFF3EE;
-
-    /* Text Colors */
-    --text: #333333;
-    --text-muted: #777777;
-
-    /* Border Colors */
-    --border: #E3E3E3;
-
-    /* Status Colors */
-    --success: #27AE60;
-    --warning: #F39C12;
-    --danger: #E74C3C;
-    --info: #3498DB;
-
-    /* Layout & Radius */
-    --radius-sm: 10px;
-    --radius-md: 14px;
-    --radius-lg: 20px;
-
-    /* Shadows & Transitions */
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    --transition: 0.25s ease;
-}
-
-/* ==========================================
-   RESET & OPTIMASI KHUSUS IPHONE / IOS
-   ========================================== */
+   KLONTONGIN - GLOBAL BASE STYLES
+   =================================== */
 * {
     box-sizing: border-box;
-    -webkit-tap-highlight-color: transparent; /* Hilangkan efek bayangan abu-abu saat tombol di-tap di iOS */
-    -webkit-text-size-adjust: 100%;           /* Cegah Safari memperbesar font otomatis */
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 body {
-    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--background);
-    color: var(--text);
-    margin: 0;
-    padding: 20px;
-
-    /* Mengatur area aman (Safe Area) untuk Notch & Home Bar iPhone */
-    padding-top: calc(20px + env(safe-area-inset-top));
-    padding-bottom: calc(20px + env(safe-area-inset-bottom));
-    padding-left: calc(20px + env(safe-area-inset-left));
-    padding-right: calc(20px + env(safe-area-inset-right));
+    background-color: #fdf8f5;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    padding: 15px;
+    min-height: 100vh;
 }
 
 .container {
-    max-width: 1000px;
-    margin: 0 auto;
-    background: var(--surface);
-    padding: 24px;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 1200px; /* Diperlebar agar pas di layar laptop */
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
-/* Mematikan styling bawaan tombol/input iOS agar seragam */
-input[type="text"],
-input[type="number"],
-select,
-textarea,
-button {
-    -webkit-appearance: none;
-    appearance: none;
-    border-radius: var(--radius-md);
+/* Header & Logo */
+.header-logo img.brand-logo {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
 }
 
-/* ===================================
-   TYPOGRAPHY & BRANDING
-=================================== */
-h1 {
-    text-align: center;
-    color: var(--primary);
-    margin-top: 0;
+.header-logo h1 {
+    color: #D67A67;
+    margin-top: 5px;
+    font-size: 26px;
 }
 
-.brand-logo {
-    width: 42px;
-    height: 42px;
-    vertical-align: middle;
-    margin-right: 6px;
-}
-
-/* ===================================
-   MAIN NAVIGATION
-=================================== */
+/* Navigasi Utama */
 .main-nav {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 20px 0 30px;
-    justify-content: center;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    scrollbar-width: none;
+}
+
+.main-nav::-webkit-scrollbar {
+    display: none;
 }
 
 .nav-link {
-    display: inline-block;
-    padding: 10px 18px;
-    border-radius: var(--radius-sm);
     text-decoration: none;
-    color: var(--text);
-    background: #f1f1f1;
-    font-weight: 600;
-    transition: var(--transition);
-}
-
-.nav-link:hover {
-    transform: translateY(-2px);
-    background: var(--surface-soft);
+    color: #555;
+    background: #f0f0f0;
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    white-space: nowrap;
+    transition: all 0.2s;
 }
 
 .nav-link.active {
-    background: var(--primary);
+    background: #D67A67;
     color: #fff;
+    font-weight: bold;
 }
 
-/* ===================================
-   BUTTONS & INPUTS
-=================================== */
-input, select {
-    width: 100%;
-    padding: 12px 14px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    font-size: 15px;
-    font-family: inherit;
-    transition: var(--transition);
-    background-color: #fff;
-}
-
-input:focus, select:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(214, 122, 103, 0.15);
-}
-
-button, .btn {
-    padding: 12px 18px;
+/* Buttons */
+.btn {
     border: none;
-    border-radius: var(--radius-md);
-    font-size: 15px;
-    font-weight: 600;
-    font-family: inherit;
+    padding: 10px 15px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: var(--transition);
-}
-
-button:hover, .btn:hover {
-    transform: translateY(-2px);
+    font-size: 14px;
+    transition: background 0.2s;
 }
 
 .btn-primary {
-    background: var(--primary);
+    background: #D67A67;
     color: white;
-}
-
-.btn-primary:hover {
-    background: var(--primary-hover);
 }
 
 .btn-secondary {
-    background: #6C757D;
-    color: white;
-}
-
-.btn-secondary:hover {
-    background: #5A6268;
-}
-
-.btn-success {
-    background: var(--success);
-    color: white;
-}
-
-.btn-kembali {
-    border: none;
-    background: #fff;
+    background: #eee;
     color: #333;
-    padding: 10px 18px;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-size: 15px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(0,0,0,.08);
-    transition: var(--transition);
 }
 
-.btn-kembali:hover {
-    transform: translateY(-2px);
-}
-
-/* ===================================
-   DASHBOARD / STATS
-=================================== */
-.dashboard-box, .dashboard {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 16px;
-    margin: 24px 0;
-}
-
-.dashboard-card, .stat-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 18px;
-    text-align: center;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
-}
-
-.dashboard-card h3 {
-    font-size: 28px;
-    margin: 0 0 8px;
-}
-
-.dashboard-card h2, .stat-card h2 {
-    font-size: 24px;
-    margin: 0 0 6px;
-    color: var(--primary);
-}
-
-.dashboard-card p, .stat-card p {
-    color: var(--text-muted);
-    font-size: 14px;
-    margin: 0;
-}
-
-/* ===================================
-   FORM & SORT BOX (INVENTORY)
-=================================== */
-.form-box {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    margin-top: 24px;
-}
-
-.barcode-row {
-    display: flex;
-    gap: 10px;
-}
-
-.barcode-row input {
-    flex: 1;
-}
-
-.form-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.form-actions button {
-    flex: 1;
-}
-
-.sort-box {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 16px;
-    margin: 24px 0;
-    align-items: center;
-}
-
-/* ===================================
-   KASIR / CASHIER MODULE (2 KOLOM)
-=================================== */
-@media (min-width: 800px) {
-    .cashier-layout {
-        display: grid;
-        grid-template-columns: 1fr 340px;
-        gap: 24px;
-        align-items: start;
-    }
-}
-
-.cashier-box, .cart-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 20px;
-    border-radius: var(--radius-md);
-    margin-bottom: 20px;
-}
-
-#cashierItems {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 14px;
-    margin-top: 16px;
-}
-
-.cashier-card {
-    background: var(--surface-soft);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 14px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    box-shadow: 0 3px 10px rgba(0,0,0,.04);
-}
-
-.cashier-card h3 {
-    margin: 0 0 6px;
-    font-size: 16px;
-}
-
-.cashier-card p {
-    margin: 4px 0;
-    font-weight: bold;
-    color: var(--primary);
-}
-
-.cashier-card small {
-    color: var(--text-muted);
-}
-
-.cashier-card button {
-    width: 100%;
-    margin-top: 10px;
-}
-
-/* CART ITEMS */
-#cartItems {
-    list-style: none;
-    padding: 0;
-    margin: 14px 0;
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-#cartItems li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 10px;
-    padding: 12px;
-    background: var(--surface-soft);
-    border-radius: var(--radius-sm);
-    box-shadow: 0 2px 8px rgba(0,0,0,.04);
-}
-
-.cart-summary, .change-group {
-    margin: 14px 0;
-}
-
-.payment-group {
-    margin-top: 14px;
-}
-
-#checkoutButton {
-    width: 100%;
-    margin-top: 10px;
-}
-
-/* STOCK CONTROLS (+/-) */
-.stock-controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.stock-controls button {
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: none;
-    border-radius: 8px;
-    background: var(--primary);
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.stock-text {
-    min-width: 25px;
-    text-align: center;
-    font-weight: bold;
-}
-
-/* ===================================
-   RIWAYAT & DETAIL TRANSAKSI
-=================================== */
-.transaction-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 18px;
-    margin-bottom: 16px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.transaction-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-}
-
-.transaction-card h3 {
-    margin-top: 0;
-    margin-bottom: 8px;
-}
-
-.transaction-card ul {
-    margin: 0;
-    padding-left: 20px;
-}
-
-.transaction-card p {
-    margin-top: 12px;
-    font-weight: bold;
-}
-
-.detail-container {
-    max-width: 760px;
-    margin: 0 auto;
-}
-
-.detail-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 20px;
-}
-
-.detail-item {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 18px;
-    align-items: center;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--border);
-}
-
-.detail-item:last-child {
-    border-bottom: none;
-}
-
-.transaction-info, .items-section, .summary-section, .report-box {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 20px;
-    margin-bottom: 16px;
-}
-
-.summary-section div {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px dashed var(--border);
-}
-
-.summary-section div:last-child {
-    border-bottom: none;
-}
-
-/* ===================================
-   STRUK (RECEIPT) & MODAL BARCODE
-=================================== */
-.receipt-container {
-    max-width: 380px;
-    margin: 20px auto;
-    background: white;
-    padding: 24px;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow);
-}
-
-.receipt-header, .receipt-footer {
-    text-align: center;
-}
-
-.receipt-container .brand-logo {
-    width: 50px;
-    height: 50px;
-    margin: 0 auto 6px;
-    display: block;
-}
-
-.receipt-summary p {
-    display: flex;
-    justify-content: space-between;
-    margin: 6px 0;
-}
-
-.receipt-buttons {
-    display: flex;
-    gap: 10px;
-    margin-top: 20px;
-}
-
-.receipt-buttons button {
-    flex: 1;
-}
-
-/* SCANNER MODAL */
-.scanner-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.65);
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.scanner-modal.show {
-    display: flex;
-}
-
-.scanner-box {
-    background: #fff;
-    padding: 24px;
-    border-radius: var(--radius-lg);
-    width: min(90%, 360px);
-    text-align: center;
-}
-
-#scannerReader, #reader {
-    width: 100%;
-    margin: 15px auto;
-    border-radius: var(--radius-md);
-    overflow: hidden;
-}
-
-/* TOAST NOTIFICATION */
+/* Toast Notification */
 .toast {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%) translateY(100px);
-    background: #333;
+    visibility: hidden;
+    min-width: 200px;
+    background-color: #333;
     color: #fff;
-    padding: 12px 24px;
-    border-radius: var(--radius-md);
-    font-size: 14px;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    opacity: 0;
-    transition: all 0.3s ease;
+    text-align: center;
+    border-radius: 8px;
+    padding: 12px;
+    position: fixed;
     z-index: 2000;
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%);
+    font-size: 14px;
 }
 
 .toast.show {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
+    visibility: visible;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+@keyframes fadein {
+    from { bottom: 0; opacity: 0; }
+    to { bottom: 30px; opacity: 1; }
+}
+
+@keyframes fadeout {
+    from { bottom: 30px; opacity: 1; }
+    to { bottom: 0; opacity: 0; }
+}
+
+/* Dashboard Cards (Laporan) */
+.dashboard-box {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.dashboard-card {
+    background: #fff;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.04);
+    border: 1px solid #eee;
+}
+
+.dashboard-card h2 {
+    color: #D67A67;
+    margin: 5px 0;
 }
 
 /* ===================================
-   MEDIA PRINT (CETAK STRUK & BARCODE)
-=================================== */
-@media print {
-    body {
-        background: white;
-        padding: 0;
-    }
-
-    body * {
-        visibility: hidden;
-    }
-
-    .receipt-container, .receipt-container * {
-        visibility: visible;
-    }
-
-    .receipt-container {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        max-width: 100%;
-        box-shadow: none;
-        padding: 0;
-    }
-
-    .receipt-buttons, .main-nav {
-        display: none !important;
-    }
+   LAYOUT KASIR & RESPONSIF LAPTOP
+   =================================== */
+.cashier-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
-/* ===================================
-   RESPONSIVE MOBILE
-=================================== */
-@media (max-width: 600px) {
-    body {
-        padding: 10px;
-    }
+/* Grid Kasir & Item Produk */
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+}
 
+.cashier-card {
+    background: #fff;
+    border: 1px solid #eee;
+    padding: 12px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.cashier-card h3 {
+    font-size: 14px;
+    margin-bottom: 4px;
+    color: #333;
+}
+
+.cashier-card p {
+    color: #D67A67;
+    font-weight: bold;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.cashier-card small {
+    color: #777;
+    font-size: 11px;
+    margin-bottom: 8px;
+}
+
+.cashier-card button {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 6px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+/* Media Query Khusus Layar Laptop & Desktop (Lebar > 768px) */
+@media (min-width: 768px) {
     .container {
-        padding: 16px;
+        padding: 30px;
     }
 
-    .main-nav {
-        flex-direction: column;
-    }
-
-    .main-nav .nav-link {
-        text-align: center;
-    }
-
-    .form-actions {
-        flex-direction: column;
-    }
-
-    .detail-header {
-        flex-direction: column;
+    /* Kasir Layout 2 Kolom (Kiri: Produk & Kategori, Kanan: Keranjang) */
+    .cashier-layout {
+        flex-direction: row;
         align-items: flex-start;
     }
 
-    .detail-item {
-        grid-template-columns: 1fr;
-        gap: 8px;
+    .products-section {
+        flex: 1.8;
+    }
+
+    .cart-section {
+        flex: 1;
+        position: sticky;
+        top: 20px;
+    }
+
+    .dashboard-box {
+        grid-template-columns: repeat(4, 1fr);
     }
 }
