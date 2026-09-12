@@ -380,7 +380,6 @@ function renderDesktopSidebar() {
     btnAll.addEventListener("click", () => {
         selectedCategory = "";
         renderDesktopSidebar();
-        renderCategoryFilter();
         renderCashierItems();
     });
     desktopCategoryList.appendChild(btnAll);
@@ -397,48 +396,18 @@ function renderDesktopSidebar() {
         btn.addEventListener("click", () => {
             selectedCategory = cat.value;
             renderDesktopSidebar();
-            renderCategoryFilter();
             renderCashierItems();
         });
         desktopCategoryList.appendChild(btn);
     });
 }
 
+// Menghapus elemen filter pills dobel di HP
 function renderCategoryFilter() {
     let filterContainer = document.getElementById("cashierCategoryFilter");
-    
-    if (!filterContainer && searchCashier) {
-        filterContainer = document.createElement("div");
-        filterContainer.id = "cashierCategoryFilter";
-        filterContainer.style.cssText = "display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none;";
-        searchCashier.parentNode.insertBefore(filterContainer, searchCashier.nextSibling);
+    if (filterContainer) {
+        filterContainer.remove();
     }
-
-    if (!filterContainer) return;
-
-    filterContainer.replaceChildren();
-
-    categoriesList.forEach(cat => {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = cat.label;
-        btn.style.cssText = `
-            padding: 8px 14px; font-size: 13px; border-radius: 16px; border: 1px solid #ccc;
-            white-space: nowrap; cursor: pointer;
-            background: ${selectedCategory === cat.value ? "#D67A67" : "#fff"};
-            color: ${selectedCategory === cat.value ? "#fff" : "#333"};
-            font-weight: ${selectedCategory === cat.value ? "bold" : "normal"};
-        `;
-        
-        btn.addEventListener("click", () => {
-            selectedCategory = (selectedCategory === cat.value) ? "" : cat.value;
-            renderCategoryFilter();
-            renderDesktopSidebar();
-            renderCashierItems();
-        });
-
-        filterContainer.appendChild(btn);
-    });
 }
 
 function renderCashierItems() {
@@ -481,7 +450,6 @@ function renderCategoryGridDisplay() {
         card.textContent = cat.label;
         card.addEventListener("click", () => {
             selectedCategory = cat.value;
-            renderCategoryFilter();
             renderDesktopSidebar();
             renderCashierItems();
         });
